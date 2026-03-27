@@ -20,7 +20,6 @@
 		B0000000B /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000B /* ExerciseLibraryView.swift */; };
 		B0000000C /* RoutinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000C /* RoutinesView.swift */; };
 		B0000000D /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000D /* ProfileView.swift */; };
-		B0000000E /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000E /* DashboardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,7 +36,6 @@
 		A0000000B /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		A0000000C /* RoutinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesView.swift; sourceTree = "<group>"; };
 		A0000000D /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		A0000000E /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		PROD000001 /* IronLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -99,8 +97,7 @@
 				GRPEXR00001 /* Exercises */,
 				GRPRTN00001 /* Routines */,
 				GRPPRF00001 /* Profile */,
-				GRPDSH00001 /* Dashboard */,
-			);
+				);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -143,14 +140,6 @@
 				A0000000D /* ProfileView.swift */,
 			);
 			path = Profile;
-			sourceTree = "<group>";
-		};
-		GRPDSH00001 /* Dashboard */ = {
-			isa = PBXGroup;
-			children = (
-				A0000000E /* DashboardView.swift */,
-			);
-			path = Dashboard;
 			sourceTree = "<group>";
 		};
 		GRPPER00001 /* Persistence */ = {
@@ -258,8 +247,7 @@
 				B0000000B /* ExerciseLibraryView.swift in Sources */,
 				B0000000C /* RoutinesView.swift in Sources */,
 				B0000000D /* ProfileView.swift in Sources */,
-				B0000000E /* DashboardView.swift in Sources */,
-			);
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
