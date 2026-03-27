@@ -1,0 +1,44 @@
+import SwiftUI
+
+struct ContentView: View {
+    @State private var selectedTab: Tab = .workout
+
+    enum Tab {
+        case workout, history, exercises, routines, profile
+    }
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            WorkoutTabView()
+                .tabItem {
+                    Label("Workout", systemImage: "dumbbell.fill")
+                }
+                .tag(Tab.workout)
+
+            HistoryView()
+                .tabItem {
+                    Label("History", systemImage: "clock.fill")
+                }
+                .tag(Tab.history)
+
+            ExerciseLibraryView()
+                .tabItem {
+                    Label("Exercises", systemImage: "list.bullet")
+                }
+                .tag(Tab.exercises)
+
+            RoutinesView()
+                .tabItem {
+                    Label("Routines", systemImage: "repeat")
+                }
+                .tag(Tab.routines)
+
+            ProfileView()
+                .tabItem {
+                    Label("Profile", systemImage: "person.fill")
+                }
+                .tag(Tab.profile)
+        }
+        .tint(.blue)
+    }
+}
