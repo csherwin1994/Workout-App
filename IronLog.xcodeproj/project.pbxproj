@@ -20,6 +20,8 @@
 		B0000000B /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000B /* ExerciseLibraryView.swift */; };
 		B0000000C /* RoutinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000C /* RoutinesView.swift */; };
 		B0000000D /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000D /* ProfileView.swift */; };
+		B0000000F /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000F /* AppTheme.swift */; };
+		B00000010 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000010 /* ProgressView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +38,8 @@
 		A0000000B /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		A0000000C /* RoutinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesView.swift; sourceTree = "<group>"; };
 		A0000000D /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A0000000F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		A00000010 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		PROD000001 /* IronLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -58,6 +62,7 @@
 				GRPVWM00001 /* ViewModels */,
 				GRPVWS00001 /* Views */,
 				GRPPER00001 /* Persistence */,
+				GRPTHM00001 /* Theme */,
 			);
 			path = IronLog;
 			sourceTree = "<group>";
@@ -94,11 +99,28 @@
 			children = (
 				GRPWKT00001 /* Workout */,
 				GRPHIS00001 /* History */,
+				GRPPRG00001 /* Progress */,
 				GRPEXR00001 /* Exercises */,
 				GRPRTN00001 /* Routines */,
 				GRPPRF00001 /* Profile */,
-				);
+			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		GRPPRG00001 /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				A00000010 /* ProgressView.swift */,
+			);
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		GRPTHM00001 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000F /* AppTheme.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		GRPWKT00001 /* Workout */ = {
@@ -247,7 +269,9 @@
 				B0000000B /* ExerciseLibraryView.swift in Sources */,
 				B0000000C /* RoutinesView.swift in Sources */,
 				B0000000D /* ProfileView.swift in Sources */,
-				);
+				B0000000F /* AppTheme.swift in Sources */,
+				B00000010 /* ProgressView.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
