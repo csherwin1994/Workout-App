@@ -1,4 +1,4 @@
-# HevyClone — iOS Workout Tracker
+# IronLog — iOS Workout Tracker
 
 A Hevy-inspired workout tracking app built with **SwiftUI** and **SwiftData**, targeting **iOS 17+**.
 
@@ -17,9 +17,9 @@ A Hevy-inspired workout tracking app built with **SwiftUI** and **SwiftData**, t
 ## Project Structure
 
 ```
-HevyClone/
+IronLog/
 ├── App/
-│   ├── HevyCloneApp.swift          # App entry point + SwiftData container
+│   ├── IronLogApp.swift          # App entry point + SwiftData container
 │   └── ContentView.swift           # Tab bar navigation
 ├── Models/
 │   ├── Exercise.swift              # Exercise model (muscle group, equipment)
@@ -52,13 +52,13 @@ HevyClone/
 ## Getting Started
 
 1. Clone this repo on your Mac
-2. Open `HevyClone.xcodeproj` in Xcode
+2. Open `IronLog.xcodeproj` in Xcode
 3. Select your iPhone or the iOS Simulator as the run destination
 4. Press **Cmd + R** to build and run
 5. On first launch the app auto-seeds 50+ exercises
 
 > **Note:** To run on a real device you need a free Apple Developer account.
-> Go to **Xcode → Signing & Capabilities** and change the bundle ID to something unique (e.g. `com.yourname.HevyClone`).
+> Go to **Xcode → Signing & Capabilities** and change the bundle ID to something unique (e.g. `com.yourname.IronLog`).
 
 ## Architecture
 

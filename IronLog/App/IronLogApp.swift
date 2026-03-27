@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct HevyCloneApp: App {
+struct IronLogApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
