@@ -149,3 +149,23 @@ private extension Calendar {
         return self.date(from: components) ?? date
     }
 }
+
+#Preview("Profile") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: WorkoutSession.self, Exercise.self, Routine.self, configurations: config)
+    let context = container.mainContext
+
+    for (title, daysAgo) in [("Push Day", 0), ("Pull Day", 2), ("Leg Day", 4), ("Push Day", 7), ("Full Body", 9)] {
+        let s = WorkoutSession(title: title)
+        s.startDate = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date())!
+        s.endDate = s.startDate.addingTimeInterval(3600)
+        context.insert(s)
+        let log = ExerciseLog(exerciseName: "Bench Press", exerciseMuscleGroup: "Chest")
+        context.insert(log)
+        let ws = WorkoutSet(orderIndex: 0, weight: 80, reps: 8); ws.isCompleted = true
+        context.insert(ws); log.sets.append(ws)
+        s.exerciseLogs = [log]
+    }
+    try? context.save()
+    return ProfileView().modelContainer(container)
+}

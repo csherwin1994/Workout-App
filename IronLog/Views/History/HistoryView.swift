@@ -111,3 +111,34 @@ struct WorkoutDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
+
+#Preview("History – with data") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: WorkoutSession.self, Exercise.self, Routine.self, configurations: config)
+    let context = container.mainContext
+
+    // Seed two past workouts
+    for (title, daysAgo, sets) in [("Push Day", 1, [(80.0, 8), (85.0, 6), (90.0, 4)]),
+                                    ("Pull Day", 3, [(100.0, 5), (95.0, 6)])] {
+        let s = WorkoutSession(title: title)
+        s.startDate = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date())!
+        s.endDate = s.startDate.addingTimeInterval(3600)
+        context.insert(s)
+        let log = ExerciseLog(exerciseName: title == "Push Day" ? "Bench Press" : "Deadlift",
+                               exerciseMuscleGroup: title == "Push Day" ? "Chest" : "Back")
+        context.insert(log)
+        for (i, (w, r)) in sets.enumerated() {
+            let ws = WorkoutSet(orderIndex: i, weight: w, reps: r)
+            ws.isCompleted = true
+            context.insert(ws); log.sets.append(ws)
+        }
+        s.exerciseLogs = [log]
+    }
+    try? context.save()
+    return HistoryView().modelContainer(container)
+}
+
+#Preview("History – empty") {
+    HistoryView()
+        .modelContainer(for: [WorkoutSession.self, Exercise.self, Routine.self], inMemory: true)
+}

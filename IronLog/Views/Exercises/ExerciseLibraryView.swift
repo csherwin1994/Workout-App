@@ -169,3 +169,10 @@ struct CreateExerciseView: View {
         }
     }
 }
+
+#Preview("Exercise Library") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Exercise.self, configurations: config)
+    DataManager.seedExercisesIfNeeded(context: container.mainContext)
+    return ExerciseLibraryView().modelContainer(container)
+}

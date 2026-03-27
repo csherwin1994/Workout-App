@@ -305,3 +305,41 @@ struct FilterChip: View {
         }
     }
 }
+
+#Preview("Active Workout") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: WorkoutSession.self, Exercise.self, Routine.self, configurations: config)
+    let context = container.mainContext
+
+    // Seed sample workout
+    let session = WorkoutSession(title: "Push Day")
+    context.insert(session)
+    let log = ExerciseLog(exerciseName: "Bench Press", exerciseMuscleGroup: "Chest", orderIndex: 0)
+    context.insert(log)
+    let s1 = WorkoutSet(orderIndex: 0, weight: 80, reps: 8); s1.isCompleted = true
+    let s2 = WorkoutSet(orderIndex: 1, weight: 80, reps: 8)
+    let s3 = WorkoutSet(orderIndex: 2, weight: 75, reps: 10)
+    for s in [s1, s2, s3] { context.insert(s); log.sets.append(s) }
+    let log2 = ExerciseLog(exerciseName: "Overhead Press", exerciseMuscleGroup: "Shoulders", orderIndex: 1)
+    context.insert(log2)
+    let s4 = WorkoutSet(orderIndex: 0, weight: 50, reps: 10)
+    context.insert(s4); log2.sets.append(s4)
+    session.exerciseLogs = [log, log2]
+    try? context.save()
+
+    let vm = ActiveWorkoutViewModel()
+    vm.session = session
+    vm.isActive = true
+    vm.elapsedSeconds = 312
+
+    return ActiveWorkoutView(vm: vm)
+        .modelContainer(container)
+}
+
+#Preview("Exercise Picker") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Exercise.self, configurations: config)
+    DataManager.seedExercisesIfNeeded(context: container.mainContext)
+    return ExercisePickerSheet(onSelect: { _ in })
+        .modelContainer(container)
+}

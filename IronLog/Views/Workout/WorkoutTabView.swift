@@ -129,6 +129,13 @@ struct RoutineQuickStartCard: View {
     }
 }
 
+#Preview("Workout Tab") {
+    NavigationStack {
+        WorkoutTabView()
+    }
+    .modelContainer(for: [WorkoutSession.self, Exercise.self, Routine.self], inMemory: true)
+}
+
 struct RoutinePickerSheet: View {
     let workoutVM: ActiveWorkoutViewModel
     @Binding var showingActiveWorkout: Bool

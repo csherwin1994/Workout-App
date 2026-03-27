@@ -42,3 +42,8 @@ struct ContentView: View {
         .tint(.blue)
     }
 }
+
+#Preview("iPhone 17 – Home") {
+    ContentView()
+        .modelContainer(for: [WorkoutSession.self, Exercise.self, Routine.self], inMemory: true)
+}

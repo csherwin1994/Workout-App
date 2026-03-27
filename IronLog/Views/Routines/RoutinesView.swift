@@ -197,3 +197,31 @@ struct CreateRoutineView: View {
         }
     }
 }
+
+#Preview("Routines – with data") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Routine.self, Exercise.self, WorkoutSession.self, configurations: config)
+    let context = container.mainContext
+
+    for (rName, exercises) in [
+        ("Push Day", [("Bench Press", "Chest", 4, 8), ("Overhead Press", "Shoulders", 3, 10), ("Tricep Pushdown", "Triceps", 3, 12)]),
+        ("Pull Day", [("Deadlift", "Back", 3, 5), ("Pull Up", "Back", 3, 8), ("Barbell Curl", "Biceps", 3, 12)]),
+        ("Leg Day", [("Squat", "Legs", 4, 6), ("Leg Press", "Legs", 3, 10), ("Romanian Deadlift", "Legs", 3, 10)])
+    ] {
+        let routine = Routine(name: rName)
+        context.insert(routine)
+        for (i, (exName, muscle, sets, reps)) in exercises.enumerated() {
+            let re = RoutineExercise(exerciseName: exName, exerciseMuscleGroup: muscle,
+                                     orderIndex: i, targetSets: sets, targetReps: reps)
+            context.insert(re)
+            routine.exercises.append(re)
+        }
+    }
+    try? context.save()
+    return RoutinesView().modelContainer(container)
+}
+
+#Preview("Routines – empty") {
+    RoutinesView()
+        .modelContainer(for: [Routine.self, Exercise.self, WorkoutSession.self], inMemory: true)
+}
