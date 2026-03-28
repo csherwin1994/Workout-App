@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcarchive
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods (not used but common)
+Pods/
+Podfile.lock
+
+# Expo / React Native (migration branch only)
+expo-app/node_modules/
+expo-app/.expo/
+expo-app/package-lock.json
+
+# Environment / secrets
+.env
+*.env.local
+Config/Secrets.swift
+
+# Python artifacts
+__pycache__/
+*.pyc
