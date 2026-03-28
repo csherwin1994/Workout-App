@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab: Tab = .workout
 
-    enum Tab { case workout, history, progress, exercises, profile }
+    enum Tab { case workout, history, progress, exercises, routines, profile }
 
     var body: some View {
         TabView(selection: $selectedTab) {

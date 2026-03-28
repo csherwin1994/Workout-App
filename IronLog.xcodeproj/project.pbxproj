@@ -26,6 +26,8 @@
 		B00000012 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000012 /* EmptyStateView.swift */; };
 		B00000013 /* AIWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000013 /* AIWorkoutService.swift */; };
 		B00000014 /* AIWorkoutGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000014 /* AIWorkoutGeneratorView.swift */; };
+		B00000015 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000015 /* SupabaseManager.swift */; };
+		B00000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000016 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +50,8 @@
 		A00000012 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		A00000013 /* AIWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutService.swift; sourceTree = "<group>"; };
 		A00000014 /* AIWorkoutGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutGeneratorView.swift; sourceTree = "<group>"; };
+		A00000015 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
+		A00000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		PROD000001 /* IronLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -73,6 +77,7 @@
 				GRPTHM00001 /* Theme */,
 				GRPCMP00001 /* Components */,
 				GRPSVC00001 /* Services */,
+				A00000016 /* Assets.xcassets */,
 			);
 			path = IronLog;
 			sourceTree = "<group>";
@@ -90,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000013 /* AIWorkoutService.swift */,
+				A00000015 /* SupabaseManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -282,6 +288,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B00000016 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -311,6 +318,7 @@
 				B00000012 /* EmptyStateView.swift in Sources */,
 				B00000013 /* AIWorkoutService.swift in Sources */,
 				B00000014 /* AIWorkoutGeneratorView.swift in Sources */,
+				B00000015 /* SupabaseManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
