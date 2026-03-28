@@ -419,4 +419,6 @@ struct RoutinePickerSheet: View {
 #Preview("Workout Tab") {
     WorkoutTabView()
         .modelContainer(for: [WorkoutSession.self, Exercise.self, Routine.self], inMemory: true)
+        .environment(SupabaseManager.shared)
+        .preferredColorScheme(.dark)
 }
