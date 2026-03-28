@@ -181,6 +181,7 @@ final class SupabaseManager {
 
     // MARK: - Sign In with Google
 
+    @MainActor
     func signInWithGoogle(presenting anchor: ASPresentationAnchor) async throws {
         let redirectURL = "com.sherwinlabs.volt://auth-callback"
         guard var components = URLComponents(string: baseURL.absoluteString + "/auth/v1/authorize") else {
@@ -192,7 +193,7 @@ final class SupabaseManager {
         ]
         guard let authURL = components.url else { throw SupabaseError.encodingFailed }
 
-        var authSession: ASWebAuthenticationSession?
+        let anchorProvider = AnchorProvider(anchor: anchor)
         let callbackURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
             let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: "com.sherwinlabs.volt") { url, error in
                 if let error {
@@ -203,12 +204,11 @@ final class SupabaseManager {
                     continuation.resume(throwing: SupabaseError.authFailed("No callback URL"))
                 }
             }
-            session.presentationContextProvider = AnchorProvider(anchor: anchor)
+            session.presentationContextProvider = anchorProvider
             session.prefersEphemeralWebBrowserSession = true
-            authSession = session
             session.start()
         }
-        _ = authSession
+        _ = anchorProvider
 
         guard
             let fragment = callbackURL.fragment,
@@ -379,7 +379,7 @@ func randomNonce(length: Int = 32) -> String {
     var remainingLength = length
     while remainingLength > 0 {
         var randoms = [UInt8](repeating: 0, count: 16)
-        SecRandomCopyBytes(kSecRandomDefault, randoms.count, &randoms)
+        _ = SecRandomCopyBytes(kSecRandomDefault, randoms.count, &randoms)
         randoms.forEach { random in
             if remainingLength == 0 { return }
             if random < charset.count {

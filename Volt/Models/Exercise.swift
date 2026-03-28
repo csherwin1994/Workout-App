@@ -28,27 +28,21 @@ final class Exercise {
     /// Per-exercise SF Symbol — specific first, equipment-based fallback for custom exercises.
     var icon: String {
         switch name {
-        // Cardio — most specific
-        case "Treadmill":                    return "figure.run"
-        case "Cycling":                      return "figure.indoor.cycle"
-        case "Jump Rope":                    return "figure.jumprope"
-        case "Rowing Machine":               return "figure.rowing"
-
-        // Cardio — most specific
+        // Cardio
         case "Cycling", "Assault Bike":      return "figure.indoor.cycle"
         case "Rowing Machine", "Ski Erg",
              "Seated Cable Row",
              "Single Arm Cable Row":         return "figure.rowing"
         case "Treadmill", "Sprints":         return "figure.run"
         case "Elliptical":                   return "figure.cross.training"
-        case "Stair Climber":                return "figure.stair.stepper"
-        case "Swimming":                     return "figure.pool.swim"
+        case "Stair Climber":                return "figure.walk"
+        case "Swimming":                     return "figure.open.water.swim"
         case "Jump Rope":                    return "figure.jumprope"
 
         // Bodyweight movements with dedicated symbols
         case "Push Up", "Wide Push Up",
-             "Decline Push Up":              return "figure.push.ups"
-        case "Diamond Push Up",
+             "Decline Push Up",
+             "Diamond Push Up",
              "Close Grip Push Up":           return "figure.push.ups"
         case "Pull Up", "Chin Up",
              "Neutral Grip Pull Up":         return "figure.strengthtraining.functional"
@@ -56,7 +50,7 @@ final class Exercise {
              "Bench Dip":                    return "figure.strengthtraining.functional"
         case "Lunge", "Walking Lunge",
              "Reverse Lunge":                return "figure.walk"
-        case "Box Jump":                     return "figure.jump"
+        case "Box Jump":                     return "figure.cross.training"
         case "Burpee", "Bear Crawl":         return "figure.cross.training"
         case "Pistol Squat", "Sissy Squat",
              "Wall Sit":                     return "figure.strengthtraining.functional"
