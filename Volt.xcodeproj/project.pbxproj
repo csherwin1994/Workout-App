@@ -26,6 +26,7 @@
 		B00000012 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000012 /* EmptyStateView.swift */; };
 		B00000013 /* AIWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000013 /* AIWorkoutService.swift */; };
 		B00000014 /* AIWorkoutGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000014 /* AIWorkoutGeneratorView.swift */; };
+		B00000020 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000020 /* LoginView.swift */; };
 		B00000015 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000015 /* SupabaseManager.swift */; };
 		B00000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000016 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -51,6 +52,7 @@
 		A00000013 /* AIWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutService.swift; sourceTree = "<group>"; };
 		A00000014 /* AIWorkoutGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutGeneratorView.swift; sourceTree = "<group>"; };
 		A00000015 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
+		A00000020 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		A00000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		PROD000001 /* Volt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Volt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -137,8 +139,17 @@
 				GRPRTN00001 /* Routines */,
 				GRPPRF00001 /* Profile */,
 				GRPAI000001 /* AI */,
+				GRPAUT00001 /* Auth */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		GRPAUT00001 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A00000020 /* LoginView.swift */,
+			);
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		GRPAI000001 /* AI */ = {
@@ -318,6 +329,7 @@
 				B00000012 /* EmptyStateView.swift in Sources */,
 				B00000013 /* AIWorkoutService.swift in Sources */,
 				B00000014 /* AIWorkoutGeneratorView.swift in Sources */,
+				B00000020 /* LoginView.swift in Sources */,
 				B00000015 /* SupabaseManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
