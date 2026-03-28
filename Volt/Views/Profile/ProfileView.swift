@@ -3,6 +3,8 @@ import SwiftData
 
 struct ProfileView: View {
     @Query private var sessions: [WorkoutSession]
+    @Environment(\.modelContext) private var modelContext
+    @Environment(SupabaseManager.self) private var supabase
     @AppStorage("username") private var username = "Athlete"
     @AppStorage("weightUnit") private var weightUnit = "kg"
     @AppStorage("anthropicAPIKey") private var apiKey = ""
@@ -10,6 +12,7 @@ struct ProfileView: View {
     @State private var tempAPIKey = ""
     @State private var editingName = false
     @State private var tempName = ""
+    @State private var showingSignOutConfirm = false
 
     private var completed: [WorkoutSession] { sessions.filter { $0.endDate != nil } }
 
@@ -45,9 +48,11 @@ struct ProfileView: View {
                 List {
                     profileHeader
                     statsSection
+                    syncSection
                     aiSection
                     settingsSection
                     aboutSection
+                    signOutSection
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
@@ -79,6 +84,11 @@ struct ProfileView: View {
                         Text(username)
                             .font(.title3.bold())
                             .foregroundStyle(VoltColor.label)
+                    }
+                    if let email = supabase.currentEmail {
+                        Text(email)
+                            .font(.caption)
+                            .foregroundStyle(VoltColor.labelSecondary)
                     }
                     if streak > 0 {
                         HStack(spacing: 4) {
@@ -163,6 +173,70 @@ struct ProfileView: View {
             .foregroundStyle(VoltColor.label)
             .listRowBackground(VoltColor.surface)
             .listRowSeparatorTint(VoltColor.border)
+        }
+    }
+
+    // MARK: - Sync
+    private var syncSection: some View {
+        Section("Cloud Backup") {
+            Button {
+                Task { await supabase.syncAll(context: modelContext) }
+            } label: {
+                HStack {
+                    Image(systemName: supabase.isSyncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up")
+                        .foregroundStyle(VoltColor.accent)
+                        .frame(width: 28)
+                        .symbolEffect(.rotate, isActive: supabase.isSyncing)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sync to Cloud")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(VoltColor.label)
+                        if let error = supabase.lastSyncError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(VoltColor.danger)
+                        } else {
+                            Text(supabase.isSyncing ? "Syncing..." : "Back up your workouts & routines")
+                                .font(.caption)
+                                .foregroundStyle(VoltColor.labelSecondary)
+                        }
+                    }
+                    Spacer()
+                    if !supabase.isSyncing {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(VoltColor.labelTertiary)
+                    }
+                }
+            }
+            .disabled(supabase.isSyncing)
+            .listRowBackground(VoltColor.surface)
+            .listRowSeparatorTint(VoltColor.border)
+        }
+    }
+
+    // MARK: - Sign Out
+    private var signOutSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showingSignOutConfirm = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("Sign Out")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                }
+            }
+            .listRowBackground(VoltColor.surface)
+            .confirmationDialog("Sign Out?", isPresented: $showingSignOutConfirm, titleVisibility: .visible) {
+                Button("Sign Out", role: .destructive) {
+                    Task { await supabase.signOut() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your data is saved locally and will be here when you sign back in.")
+            }
         }
     }
 
@@ -300,5 +374,7 @@ private extension Calendar {
         ctx.insert(ws); log.sets.append(ws); s.exerciseLogs = [log]
     }
     try? ctx.save()
-    return ProfileView().modelContainer(container)
+    return ProfileView()
+        .modelContainer(container)
+        .environment(SupabaseManager.shared)
 }

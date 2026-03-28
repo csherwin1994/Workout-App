@@ -3,9 +3,12 @@ import SwiftData
 
 @main
 struct VoltApp: App {
+    @State private var supabase = SupabaseManager.shared
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(supabase)
                 .preferredColorScheme(.dark)
         }
         .modelContainer(for: [
@@ -13,5 +16,45 @@ struct VoltApp: App {
             Exercise.self,
             Routine.self
         ])
+    }
+}
+
+// MARK: - Root view — auth gate
+
+struct RootView: View {
+    @Environment(SupabaseManager.self) private var supabase
+
+    var body: some View {
+        switch supabase.authState {
+        case .loading:
+            splashScreen
+
+        case .signedOut:
+            LoginView()
+                .transition(.opacity)
+
+        case .signedIn:
+            ContentView()
+                .transition(.opacity)
+        }
+    }
+
+    private var splashScreen: some View {
+        ZStack {
+            VoltColor.bg.ignoresSafeArea()
+            VStack(spacing: VoltSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(VoltGradient.brand)
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                Text("Volt")
+                    .font(.system(size: 34, weight: .black))
+                    .foregroundStyle(VoltColor.label)
+            }
+        }
     }
 }

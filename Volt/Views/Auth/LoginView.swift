@@ -1,0 +1,225 @@
+import SwiftUI
+
+struct LoginView: View {
+    @State private var mode: Mode = .signIn
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @FocusState private var focusedField: Field?
+
+    private let supabase = SupabaseManager.shared
+
+    enum Mode { case signIn, signUp }
+    enum Field { case email, password, confirmPassword }
+
+    var body: some View {
+        ZStack {
+            VoltColor.bg.ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Logo / brand header
+                    VStack(spacing: VoltSpacing.sm) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(VoltGradient.brand)
+                                .frame(width: 80, height: 80)
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 36, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                        Text("Volt")
+                            .font(.system(size: 34, weight: .black))
+                            .foregroundStyle(VoltColor.label)
+                        Text("Performance, tracked.")
+                            .font(.subheadline)
+                            .foregroundStyle(VoltColor.labelSecondary)
+                    }
+                    .padding(.top, VoltSpacing.xxl)
+                    .padding(.bottom, VoltSpacing.xl)
+
+                    // Mode toggle
+                    HStack(spacing: 0) {
+                        modeTab("Sign In", selected: mode == .signIn) { withAnimation(.easeInOut(duration: 0.2)) { mode = .signIn; errorMessage = nil } }
+                        modeTab("Create Account", selected: mode == .signUp) { withAnimation(.easeInOut(duration: 0.2)) { mode = .signUp; errorMessage = nil } }
+                    }
+                    .background(VoltColor.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+                    .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius).stroke(VoltColor.border, lineWidth: 0.5))
+                    .padding(.horizontal, VoltSpacing.lg)
+                    .padding(.bottom, VoltSpacing.lg)
+
+                    // Fields
+                    VStack(spacing: VoltSpacing.sm) {
+                        inputField(
+                            icon: "envelope",
+                            placeholder: "Email address",
+                            text: $email,
+                            field: .email,
+                            keyboard: .emailAddress,
+                            contentType: .emailAddress
+                        )
+
+                        inputField(
+                            icon: "lock",
+                            placeholder: "Password",
+                            text: $password,
+                            field: .password,
+                            isSecure: true,
+                            contentType: mode == .signIn ? .password : .newPassword
+                        )
+
+                        if mode == .signUp {
+                            inputField(
+                                icon: "lock.fill",
+                                placeholder: "Confirm password",
+                                text: $confirmPassword,
+                                field: .confirmPassword,
+                                isSecure: true,
+                                contentType: .newPassword
+                            )
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                    }
+                    .padding(.horizontal, VoltSpacing.lg)
+
+                    // Error
+                    if let error = errorMessage {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundStyle(VoltColor.danger)
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundStyle(VoltColor.danger)
+                        }
+                        .padding(.horizontal, VoltSpacing.lg)
+                        .padding(.top, VoltSpacing.sm)
+                        .transition(.opacity)
+                    }
+
+                    // CTA
+                    VoltButton(
+                        mode == .signIn ? "Sign In" : "Create Account",
+                        icon: mode == .signIn ? "arrow.right.circle.fill" : "person.badge.plus",
+                        isLoading: isLoading
+                    ) {
+                        Task { await submit() }
+                    }
+                    .padding(.horizontal, VoltSpacing.lg)
+                    .padding(.top, VoltSpacing.lg)
+                    .disabled(!isFormValid)
+                    .opacity(isFormValid ? 1 : 0.5)
+
+                    // Sign in hint
+                    if mode == .signUp {
+                        Text("By creating an account you agree to our Terms of Service.")
+                            .font(.caption)
+                            .foregroundStyle(VoltColor.labelTertiary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, VoltSpacing.xl)
+                            .padding(.top, VoltSpacing.md)
+                    }
+
+                    Spacer(minLength: VoltSpacing.xxl)
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .animation(.easeInOut(duration: 0.2), value: mode)
+        .animation(.easeInOut(duration: 0.2), value: errorMessage)
+    }
+
+    // MARK: - Subviews
+
+    private func modeTab(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(selected ? VoltGradient.brand : Color.clear)
+                .foregroundStyle(selected ? .white : VoltColor.labelSecondary)
+                .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius - 1))
+        }
+    }
+
+    private func inputField(
+        icon: String,
+        placeholder: String,
+        text: Binding<String>,
+        field: Field,
+        keyboard: UIKeyboardType = .default,
+        isSecure: Bool = false,
+        contentType: UITextContentType? = nil
+    ) -> some View {
+        HStack(spacing: VoltSpacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(focusedField == field ? VoltColor.accent : VoltColor.labelTertiary)
+                .frame(width: 22)
+
+            if isSecure {
+                SecureField(placeholder, text: text)
+                    .textContentType(contentType)
+                    .focused($focusedField, equals: field)
+                    .font(.subheadline)
+                    .foregroundStyle(VoltColor.label)
+            } else {
+                TextField(placeholder, text: text)
+                    .keyboardType(keyboard)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .textContentType(contentType)
+                    .focused($focusedField, equals: field)
+                    .font(.subheadline)
+                    .foregroundStyle(VoltColor.label)
+            }
+        }
+        .padding(VoltSpacing.md)
+        .background(VoltColor.surface)
+        .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+        .overlay(
+            RoundedRectangle(cornerRadius: VoltSpacing.radius)
+                .stroke(focusedField == field ? VoltColor.accent : VoltColor.border, lineWidth: focusedField == field ? 1 : 0.5)
+        )
+        .animation(.easeInOut(duration: 0.15), value: focusedField)
+    }
+
+    // MARK: - Validation
+
+    private var isFormValid: Bool {
+        let emailOK = email.contains("@") && email.contains(".")
+        let passOK  = password.count >= 6
+        if mode == .signUp { return emailOK && passOK && confirmPassword == password }
+        return emailOK && passOK
+    }
+
+    // MARK: - Submit
+
+    private func submit() async {
+        focusedField = nil
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            if mode == .signIn {
+                try await supabase.signIn(email: email.trimmingCharacters(in: .whitespaces), password: password)
+            } else {
+                guard password == confirmPassword else {
+                    errorMessage = "Passwords don't match"
+                    return
+                }
+                try await supabase.signUp(email: email.trimmingCharacters(in: .whitespaces), password: password)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+#Preview {
+    LoginView()
+}

@@ -41,5 +41,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .modelContainer(for: [WorkoutSession.self, Exercise.self, Routine.self], inMemory: true)
+        .environment(SupabaseManager.shared)
         .preferredColorScheme(.dark)
 }
