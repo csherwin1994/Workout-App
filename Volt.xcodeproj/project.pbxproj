@@ -24,10 +24,9 @@
 		B00000010 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000010 /* ProgressView.swift */; };
 		B00000011 /* VoltButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000011 /* VoltButton.swift */; };
 		B00000012 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000012 /* EmptyStateView.swift */; };
-		B00000013 /* AIWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000013 /* AIWorkoutService.swift */; };
-		B00000014 /* AIWorkoutGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000014 /* AIWorkoutGeneratorView.swift */; };
 		B00000020 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000020 /* LoginView.swift */; };
 		B00000015 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000015 /* SupabaseManager.swift */; };
+		B00000021 /* WorkoutRecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000021 /* WorkoutRecommendationEngine.swift */; };
 		B00000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000016 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -49,9 +48,8 @@
 		A00000010 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		A00000011 /* VoltButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoltButton.swift; sourceTree = "<group>"; };
 		A00000012 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
-		A00000013 /* AIWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutService.swift; sourceTree = "<group>"; };
-		A00000014 /* AIWorkoutGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWorkoutGeneratorView.swift; sourceTree = "<group>"; };
 		A00000015 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
+		A00000021 /* WorkoutRecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRecommendationEngine.swift; sourceTree = "<group>"; };
 		A00000020 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		A00000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		PROD000001 /* Volt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Volt.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -96,8 +94,8 @@
 		GRPSVC00001 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				A00000013 /* AIWorkoutService.swift */,
-				A00000015 /* SupabaseManager.swift */,
+					A00000015 /* SupabaseManager.swift */,
+				A00000021 /* WorkoutRecommendationEngine.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -138,8 +136,7 @@
 				GRPEXR00001 /* Exercises */,
 				GRPRTN00001 /* Routines */,
 				GRPPRF00001 /* Profile */,
-				GRPAI000001 /* AI */,
-				GRPAUT00001 /* Auth */,
+					GRPAUT00001 /* Auth */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -150,14 +147,6 @@
 				A00000020 /* LoginView.swift */,
 			);
 			path = Auth;
-			sourceTree = "<group>";
-		};
-		GRPAI000001 /* AI */ = {
-			isa = PBXGroup;
-			children = (
-				A00000014 /* AIWorkoutGeneratorView.swift */,
-			);
-			path = AI;
 			sourceTree = "<group>";
 		};
 		GRPPRG00001 /* Progress */ = {
@@ -327,10 +316,9 @@
 				B00000010 /* ProgressView.swift in Sources */,
 				B00000011 /* VoltButton.swift in Sources */,
 				B00000012 /* EmptyStateView.swift in Sources */,
-				B00000013 /* AIWorkoutService.swift in Sources */,
-				B00000014 /* AIWorkoutGeneratorView.swift in Sources */,
 				B00000020 /* LoginView.swift in Sources */,
 				B00000015 /* SupabaseManager.swift in Sources */,
+				B00000021 /* WorkoutRecommendationEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -5,10 +5,7 @@ struct WorkoutTabView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var workoutVM = ActiveWorkoutViewModel()
     @State private var showingActiveWorkout = false
-    @State private var showingAIGenerator = false
     @State private var showingRoutinePicker = false
-    @State private var showingAPIKeyAlert = false
-    @AppStorage("anthropicAPIKey") private var anthropicAPIKey = ""
 
     @Query(sort: \Routine.createdAt, order: .reverse) private var routines: [Routine]
     @Query(sort: \WorkoutSession.startDate, order: .reverse) private var sessions: [WorkoutSession]
@@ -36,6 +33,10 @@ struct WorkoutTabView: View {
         sessions.first { $0.endDate != nil }
     }
 
+    private var recommendation: WorkoutRecommendation {
+        WorkoutRecommendationEngine.recommend(from: sessions.filter { $0.endDate != nil }, routines: routines)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -45,6 +46,7 @@ struct WorkoutTabView: View {
                     VStack(spacing: VoltSpacing.xl) {
                         heroSection
                         startSection
+                        recommendationSection
                         if !routines.isEmpty { routinesSection }
                         if let last = lastWorkout { lastWorkoutSection(last) }
                     }
@@ -67,10 +69,6 @@ struct WorkoutTabView: View {
             .onAppear { DataManager.seedExercisesIfNeeded(context: modelContext) }
             .fullScreenCover(isPresented: $showingActiveWorkout) {
                 ActiveWorkoutView(vm: workoutVM)
-            }
-            .sheet(isPresented: $showingAIGenerator) {
-                AIWorkoutGeneratorView()
-                    .environment(workoutVM)
             }
             .sheet(isPresented: $showingRoutinePicker) {
                 RoutinePickerSheet(workoutVM: workoutVM, showingActiveWorkout: $showingActiveWorkout)
@@ -149,24 +147,13 @@ struct WorkoutTabView: View {
             }
 
             HStack(spacing: 10) {
-                // AI Workout
-                Button {
-                    if anthropicAPIKey.trimmingCharacters(in: .whitespaces).isEmpty {
-                        showingAPIKeyAlert = true
-                    } else {
-                        showingAIGenerator = true
-                    }
-                } label: {
+                // Recommendation
+                Button { showingRoutinePicker = true } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 14, weight: .semibold))
-                        Text("AI Workout")
+                        Text(recommendation.buttonLabel)
                             .font(.system(size: 14, weight: .semibold))
-                        if anthropicAPIKey.trimmingCharacters(in: .whitespaces).isEmpty {
-                            Image(systemName: "exclamationmark.circle.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(VoltColor.warning)
-                        }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
@@ -176,13 +163,8 @@ struct WorkoutTabView: View {
                     .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
                         .stroke(VoltColor.accentPurple.opacity(0.3), lineWidth: 0.5))
                 }
-                .alert("API Key Required", isPresented: $showingAPIKeyAlert) {
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Add your Anthropic API key in Profile → AI Workout Builder to use this feature.")
-                }
 
-                // Routine picker
+                // From Routine
                 Button { showingRoutinePicker = true } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "repeat")
@@ -201,6 +183,43 @@ struct WorkoutTabView: View {
             }
         }
         .padding(.horizontal, VoltSpacing.md)
+    }
+
+    // MARK: - Recommendation
+    private var recommendationSection: some View {
+        VStack(alignment: .leading, spacing: VoltSpacing.sm) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(VoltColor.accentPurple)
+                Text("Suggested Next")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(VoltColor.label)
+            }
+            .padding(.horizontal, VoltSpacing.md)
+
+            HStack(spacing: VoltSpacing.md) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(recommendation.title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(VoltColor.label)
+                    Text(recommendation.reason)
+                        .font(.caption)
+                        .foregroundStyle(VoltColor.labelSecondary)
+                        .lineLimit(2)
+                }
+                Spacer()
+                HStack(spacing: 6) {
+                    ForEach(recommendation.muscleGroups.prefix(3), id: \.self) { group in
+                        if let g = Exercise.MuscleGroup(rawValue: group) {
+                            MuscleBadge(group: g)
+                        }
+                    }
+                }
+            }
+            .voltCard()
+            .padding(.horizontal, VoltSpacing.md)
+        }
     }
 
     // MARK: - Routines

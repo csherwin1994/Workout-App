@@ -139,7 +139,7 @@ struct LoginView: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .background(selected ? VoltGradient.brand : Color.clear)
+                .background(selected ? AnyShapeStyle(VoltGradient.brand) : AnyShapeStyle(Color.clear))
                 .foregroundStyle(selected ? .white : VoltColor.labelSecondary)
                 .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius - 1))
         }

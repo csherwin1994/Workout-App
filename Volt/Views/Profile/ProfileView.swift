@@ -7,9 +7,6 @@ struct ProfileView: View {
     @Environment(SupabaseManager.self) private var supabase
     @AppStorage("username") private var username = "Athlete"
     @AppStorage("weightUnit") private var weightUnit = "kg"
-    @AppStorage("anthropicAPIKey") private var apiKey = ""
-    @State private var showingAPIKeyInput = false
-    @State private var tempAPIKey = ""
     @State private var editingName = false
     @State private var tempName = ""
     @State private var showingSignOutConfirm = false
@@ -49,7 +46,6 @@ struct ProfileView: View {
                     profileHeader
                     statsSection
                     syncSection
-                    aiSection
                     settingsSection
                     aboutSection
                     signOutSection
@@ -58,7 +54,7 @@ struct ProfileView: View {
                 .listStyle(.insetGrouped)
             }
             .navigationTitle("Profile")
-            .sheet(isPresented: $showingAPIKeyInput) { apiKeySheet }
+
         }
     }
 
@@ -134,33 +130,6 @@ struct ProfileView: View {
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-    }
-
-    // MARK: - AI section
-    private var aiSection: some View {
-        Section("AI Workout Builder") {
-            Button { showingAPIKeyInput = true } label: {
-                HStack {
-                    Image(systemName: apiKey.isEmpty ? "key" : "checkmark.seal.fill")
-                        .foregroundStyle(apiKey.isEmpty ? VoltColor.warning : VoltColor.success)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Anthropic API Key")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(VoltColor.label)
-                        Text(apiKey.isEmpty ? "Tap to add your key" : "Key configured ✓")
-                            .font(.caption)
-                            .foregroundStyle(apiKey.isEmpty ? VoltColor.warning : VoltColor.success)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(VoltColor.labelTertiary)
-                }
-            }
-            .listRowBackground(VoltColor.surface)
-            .listRowSeparatorTint(VoltColor.border)
-        }
     }
 
     // MARK: - Settings
@@ -252,72 +221,6 @@ struct ProfileView: View {
         }
         .listRowBackground(VoltColor.surface)
         .listRowSeparatorTint(VoltColor.border)
-    }
-
-    // MARK: - API Key Sheet
-    private var apiKeySheet: some View {
-        NavigationStack {
-            ZStack {
-                VoltColor.bg.ignoresSafeArea()
-                VStack(spacing: VoltSpacing.lg) {
-                    VStack(spacing: VoltSpacing.md) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 40))
-                            .foregroundStyle(VoltGradient.brand)
-                        Text("AI Workout Builder")
-                            .font(.title2.bold())
-                            .foregroundStyle(VoltColor.label)
-                        Text("Enter your Anthropic API key to enable AI-powered workout generation. Your key is stored locally on device only.")
-                            .font(.subheadline)
-                            .foregroundStyle(VoltColor.labelSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, VoltSpacing.xl)
-
-                    VStack(alignment: .leading, spacing: VoltSpacing.sm) {
-                        Text("API KEY")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(VoltColor.labelSecondary)
-                            .tracking(0.5)
-
-                        SecureField("sk-ant-...", text: $tempAPIKey)
-                            .font(VoltFont.mono(14))
-                            .foregroundStyle(VoltColor.label)
-                            .padding(VoltSpacing.md)
-                            .background(VoltColor.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radiusSm))
-                            .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radiusSm)
-                                .stroke(VoltColor.border, lineWidth: 0.5))
-                    }
-
-                    VoltButton("Save Key", icon: "key.fill") {
-                        apiKey = tempAPIKey.trimmingCharacters(in: .whitespaces)
-                        showingAPIKeyInput = false
-                    }
-                    .disabled(tempAPIKey.trimmingCharacters(in: .whitespaces).isEmpty)
-
-                    if !apiKey.isEmpty {
-                        VoltButton("Remove Key", style: .danger) {
-                            apiKey = ""
-                            tempAPIKey = ""
-                            showingAPIKeyInput = false
-                        }
-                    }
-
-                    Spacer()
-                }
-                .padding(.horizontal, VoltSpacing.lg)
-            }
-            .navigationTitle("API Key")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showingAPIKeyInput = false }
-                        .foregroundStyle(VoltColor.labelSecondary)
-                }
-            }
-        }
-        .onAppear { tempAPIKey = apiKey }
     }
 
     private func saveName() {

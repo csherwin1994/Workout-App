@@ -50,26 +50,6 @@ final class ActiveWorkoutViewModel {
         try? context.save()
     }
 
-    func startFromGenerated(_ workout: GeneratedWorkout, context: ModelContext) {
-        startWorkout(title: workout.title, context: context)
-        guard let session else { return }
-        for (index, ex) in workout.exercises.enumerated() {
-            let log = ExerciseLog(
-                exerciseName: ex.name,
-                exerciseMuscleGroup: ex.muscleGroup,
-                orderIndex: index
-            )
-            context.insert(log)
-            for i in 0..<ex.sets {
-                let set = WorkoutSet(orderIndex: i, weight: ex.weight, reps: ex.reps)
-                context.insert(set)
-                log.sets.append(set)
-            }
-            session.exerciseLogs.append(log)
-        }
-        try? context.save()
-    }
-
     func addExercise(_ exercise: Exercise, context: ModelContext) {
         guard let session else { return }
         let log = ExerciseLog(
