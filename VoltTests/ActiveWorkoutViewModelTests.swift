@@ -60,14 +60,14 @@ final class ActiveWorkoutViewModelTests: XCTestCase {
     func test_finishWorkout_setsEndDate() {
         let vm = ActiveWorkoutViewModel()
         vm.startWorkout(context: context)
-        vm.finishWorkout()
+        vm.finishWorkout(context: context)
         XCTAssertNotNil(vm.session?.endDate)
     }
 
     func test_finishWorkout_setsIsActiveFalse() {
         let vm = ActiveWorkoutViewModel()
         vm.startWorkout(context: context)
-        vm.finishWorkout()
+        vm.finishWorkout(context: context)
         XCTAssertFalse(vm.isActive)
     }
 

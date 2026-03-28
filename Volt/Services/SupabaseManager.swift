@@ -1,5 +1,7 @@
 import Foundation
 import SwiftData
+import CryptoKit
+import AuthenticationServices
 
 // MARK: - Config
 
@@ -165,6 +167,81 @@ final class SupabaseManager {
         try handleAuthResponse(response)
     }
 
+    // MARK: - Sign In with Apple
+
+    func signInWithApple(idToken: String, rawNonce: String) async throws {
+        let body: [String: Any] = [
+            "provider": "apple",
+            "id_token": idToken,
+            "nonce": rawNonce
+        ]
+        let response = try await post(path: "/auth/v1/token?grant_type=id_token", body: body, requiresAuth: false)
+        try handleAuthResponse(response)
+    }
+
+    // MARK: - Sign In with Google
+
+    func signInWithGoogle(presenting anchor: ASPresentationAnchor) async throws {
+        let redirectURL = "com.sherwinlabs.volt://auth-callback"
+        guard var components = URLComponents(string: baseURL.absoluteString + "/auth/v1/authorize") else {
+            throw SupabaseError.encodingFailed
+        }
+        components.queryItems = [
+            URLQueryItem(name: "provider", value: "google"),
+            URLQueryItem(name: "redirect_to", value: redirectURL)
+        ]
+        guard let authURL = components.url else { throw SupabaseError.encodingFailed }
+
+        var authSession: ASWebAuthenticationSession?
+        let callbackURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+            let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: "com.sherwinlabs.volt") { url, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let url {
+                    continuation.resume(returning: url)
+                } else {
+                    continuation.resume(throwing: SupabaseError.authFailed("No callback URL"))
+                }
+            }
+            session.presentationContextProvider = AnchorProvider(anchor: anchor)
+            session.prefersEphemeralWebBrowserSession = true
+            authSession = session
+            session.start()
+        }
+        _ = authSession
+
+        guard
+            let fragment = callbackURL.fragment,
+            let token = fragment.split(separator: "&").first(where: { $0.hasPrefix("access_token=") })?.dropFirst("access_token=".count)
+        else {
+            throw SupabaseError.authFailed("No access token in callback")
+        }
+        let accessTokenStr = String(token)
+        let user = try await fetchUser(accessToken: accessTokenStr)
+        self.accessToken = accessTokenStr
+        authState = .signedIn(userId: user.id, email: user.email)
+        persistSession(token: accessTokenStr, userId: user.id, email: user.email)
+    }
+
+    private struct UserResponse: Decodable {
+        let id: String
+        let email: String
+    }
+
+    private func fetchUser(accessToken: String) async throws -> UserResponse {
+        guard let url = URL(string: baseURL.absoluteString + "/auth/v1/user") else {
+            throw SupabaseError.encodingFailed
+        }
+        var request = URLRequest(url: url)
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            throw SupabaseError.httpError(http.statusCode, String(data: data, encoding: .utf8) ?? "")
+        }
+        return try JSONDecoder().decode(UserResponse.self, from: data)
+    }
+
     func signOut() async {
         _ = try? await post(path: "/auth/v1/logout", body: [:], requiresAuth: true)
         accessToken = nil
@@ -292,6 +369,39 @@ final class SupabaseManager {
         if data.isEmpty { return [:] }
         return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
     }
+}
+
+// MARK: - Nonce Helpers
+
+func randomNonce(length: Int = 32) -> String {
+    let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+    var result = ""
+    var remainingLength = length
+    while remainingLength > 0 {
+        var randoms = [UInt8](repeating: 0, count: 16)
+        SecRandomCopyBytes(kSecRandomDefault, randoms.count, &randoms)
+        randoms.forEach { random in
+            if remainingLength == 0 { return }
+            if random < charset.count {
+                result.append(charset[Int(random)])
+                remainingLength -= 1
+            }
+        }
+    }
+    return result
+}
+
+func sha256Nonce(_ input: String) -> String {
+    let digest = SHA256.hash(data: Data(input.utf8))
+    return digest.compactMap { String(format: "%02x", $0) }.joined()
+}
+
+// MARK: - ASWebAuthenticationSession Anchor
+
+private final class AnchorProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
+    let anchor: ASPresentationAnchor
+    init(anchor: ASPresentationAnchor) { self.anchor = anchor }
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor { anchor }
 }
 
 // MARK: - Errors

@@ -78,7 +78,7 @@ struct ExerciseRow: View {
                 Circle()
                     .fill(VoltColor.muscle(exercise.muscleGroup).opacity(0.12))
                     .frame(width: 40, height: 40)
-                Image(systemName: exercise.muscleGroup.icon)
+                Image(systemName: exercise.icon)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(VoltColor.muscle(exercise.muscleGroup))
             }
@@ -121,7 +121,7 @@ struct ExerciseDetailView: View {
                             RoundedRectangle(cornerRadius: VoltSpacing.radiusSm)
                                 .fill(VoltColor.muscle(exercise.muscleGroup).opacity(0.12))
                                 .frame(width: 56, height: 56)
-                            Image(systemName: exercise.muscleGroup.icon)
+                            Image(systemName: exercise.icon)
                                 .font(.system(size: 26))
                                 .foregroundStyle(VoltColor.muscle(exercise.muscleGroup))
                         }

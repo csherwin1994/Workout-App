@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
     @State private var mode: Mode = .signIn
@@ -6,8 +7,12 @@ struct LoginView: View {
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var isLoading = false
+    @State private var isSocialLoading = false
     @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
+
+    // Apple Sign In state
+    @State private var currentNonce: String?
 
     private let supabase = SupabaseManager.shared
 
@@ -122,6 +127,59 @@ struct LoginView: View {
                             .padding(.top, VoltSpacing.md)
                     }
 
+                    // Social sign-in divider
+                    HStack(spacing: VoltSpacing.sm) {
+                        Rectangle().frame(height: 0.5).foregroundStyle(VoltColor.border)
+                        Text("or").font(.caption).foregroundStyle(VoltColor.labelTertiary)
+                        Rectangle().frame(height: 0.5).foregroundStyle(VoltColor.border)
+                    }
+                    .padding(.horizontal, VoltSpacing.lg)
+                    .padding(.top, VoltSpacing.lg)
+
+                    // Sign in with Apple
+                    SignInWithAppleButton(.signIn, onRequest: { request in
+                        let nonce = randomNonce()
+                        currentNonce = nonce
+                        request.requestedScopes = [.fullName, .email]
+                        request.nonce = sha256Nonce(nonce)
+                    }, onCompletion: { result in
+                        Task { await handleAppleSignIn(result) }
+                    })
+                    .signInWithAppleButtonStyle(.white)
+                    .frame(height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+                    .padding(.horizontal, VoltSpacing.lg)
+                    .padding(.top, VoltSpacing.sm)
+                    .disabled(isSocialLoading)
+                    .opacity(isSocialLoading ? 0.6 : 1)
+
+                    // Sign in with Google
+                    Button {
+                        Task { await handleGoogleSignIn() }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if isSocialLoading {
+                                ProgressView().tint(VoltColor.label)
+                            } else {
+                                Image(systemName: "globe")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(VoltColor.label)
+                                Text("Sign in with Google")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(VoltColor.label)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(VoltColor.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+                        .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
+                            .stroke(VoltColor.border, lineWidth: 0.5))
+                    }
+                    .padding(.horizontal, VoltSpacing.lg)
+                    .padding(.top, VoltSpacing.sm)
+                    .disabled(isSocialLoading)
+
                     Spacer(minLength: VoltSpacing.xxl)
                 }
             }
@@ -194,6 +252,53 @@ struct LoginView: View {
         let passOK  = password.count >= 6
         if mode == .signUp { return emailOK && passOK && confirmPassword == password }
         return emailOK && passOK
+    }
+
+    // MARK: - Social Sign In
+
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) async {
+        isSocialLoading = true
+        errorMessage = nil
+        defer { isSocialLoading = false }
+        switch result {
+        case .failure(let error):
+            // User cancelled — ASAuthorizationError.canceled — don't show error
+            if (error as? ASAuthorizationError)?.code != .canceled {
+                errorMessage = error.localizedDescription
+            }
+        case .success(let auth):
+            guard
+                let credential = auth.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData = credential.identityToken,
+                let idToken = String(data: tokenData, encoding: .utf8),
+                let nonce = currentNonce
+            else {
+                errorMessage = "Apple Sign In failed — missing credentials"
+                return
+            }
+            do {
+                try await supabase.signInWithApple(idToken: idToken, rawNonce: nonce)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    @MainActor
+    private func handleGoogleSignIn() async {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first
+        else { return }
+        isSocialLoading = true
+        errorMessage = nil
+        defer { isSocialLoading = false }
+        do {
+            try await supabase.signInWithGoogle(presenting: window)
+        } catch {
+            if (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin {
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 
     // MARK: - Submit
