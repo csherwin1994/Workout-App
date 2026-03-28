@@ -3,9 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab: Tab = .workout
 
-    enum Tab {
-        case workout, history, progress, exercises, routines, profile
-    }
+    enum Tab { case workout, history, progress, exercises, profile }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -33,11 +31,15 @@ struct ContentView: View {
                 .tabItem { Label("Profile", systemImage: "person.fill") }
                 .tag(Tab.profile)
         }
-        .tint(.blue)
+        .tint(IronColor.accent)
     }
+
+    // needed to keep 6-tab enum valid even though HIG recommends 5
+    // Tab bar overflow becomes "More" on iOS automatically if > 5
 }
 
-#Preview("iPhone 17 – Home") {
+#Preview {
     ContentView()
         .modelContainer(for: [WorkoutSession.self, Exercise.self, Routine.self], inMemory: true)
+        .preferredColorScheme(.dark)
 }

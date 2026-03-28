@@ -3,46 +3,54 @@ import SwiftData
 
 struct ExerciseLibraryView: View {
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
-    @Environment(\.modelContext) private var modelContext
     @State private var search = ""
-    @State private var selectedMuscle: Exercise.MuscleGroup? = nil
-    @State private var showingCreateExercise = false
+    @State private var selectedMuscle: Exercise.MuscleGroup?
+    @State private var showingCreate = false
 
-    var filtered: [Exercise] {
-        exercises.filter { ex in
-            let matchesMuscle = selectedMuscle == nil || ex.muscleGroup == selectedMuscle
-            let matchesSearch = search.isEmpty || ex.name.localizedCaseInsensitiveContains(search)
-            return matchesMuscle && matchesSearch
+    private var filtered: [Exercise] {
+        exercises.filter {
+            (selectedMuscle == nil || $0.muscleGroup == selectedMuscle) &&
+            (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search))
         }
     }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Muscle filter chips
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        FilterChip(label: "All", isSelected: selectedMuscle == nil) {
-                            selectedMuscle = nil
-                        }
-                        ForEach(Exercise.MuscleGroup.allCases, id: \.self) { group in
-                            FilterChip(label: group.rawValue, isSelected: selectedMuscle == group) {
-                                selectedMuscle = selectedMuscle == group ? nil : group
+            ZStack {
+                IronColor.bg.ignoresSafeArea()
+                VStack(spacing: 0) {
+                    // Muscle filter
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            FilterChip(label: "All", isSelected: selectedMuscle == nil) { selectedMuscle = nil }
+                            ForEach(Exercise.MuscleGroup.allCases, id: \.self) { g in
+                                FilterChip(label: g.rawValue, isSelected: selectedMuscle == g) {
+                                    selectedMuscle = selectedMuscle == g ? nil : g
+                                }
                             }
                         }
+                        .padding(.horizontal, IronSpacing.md)
+                        .padding(.vertical, IronSpacing.sm)
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                }
-                Divider()
+                    Divider().background(IronColor.border)
 
-                List {
-                    ForEach(filtered) { exercise in
-                        NavigationLink {
-                            ExerciseDetailView(exercise: exercise)
-                        } label: {
-                            ExerciseRow(exercise: exercise)
+                    if filtered.isEmpty {
+                        EmptyStateView(
+                            icon: "magnifyingglass",
+                            title: "No Exercises Found",
+                            message: "Try a different search or muscle group filter.",
+                            actionTitle: "Create Exercise",
+                            action: { showingCreate = true }
+                        )
+                    } else {
+                        List(filtered) { exercise in
+                            NavigationLink { ExerciseDetailView(exercise: exercise) } label: {
+                                ExerciseRow(exercise: exercise)
+                            }
+                            .listRowBackground(IronColor.surface)
+                            .listRowSeparatorTint(IronColor.border)
                         }
+                        .scrollContentBackground(.hidden)
                     }
                 }
             }
@@ -50,16 +58,13 @@ struct ExerciseLibraryView: View {
             .navigationTitle("Exercises")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingCreateExercise = true
-                    } label: {
+                    Button { showingCreate = true } label: {
                         Image(systemName: "plus")
+                            .foregroundStyle(IronColor.accent)
                     }
                 }
             }
-            .sheet(isPresented: $showingCreateExercise) {
-                CreateExerciseView()
-            }
+            .sheet(isPresented: $showingCreate) { CreateExerciseView() }
         }
     }
 }
@@ -69,26 +74,37 @@ struct ExerciseRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: exercise.muscleGroup.icon)
-                .font(.title3)
-                .frame(width: 36, height: 36)
-                .background(Color.blue.opacity(0.1))
-                .foregroundStyle(.blue)
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 2) {
+            ZStack {
+                Circle()
+                    .fill(IronColor.muscle(exercise.muscleGroup).opacity(0.12))
+                    .frame(width: 40, height: 40)
+                Image(systemName: exercise.muscleGroup.icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(IronColor.muscle(exercise.muscleGroup))
+            }
+            VStack(alignment: .leading, spacing: 4) {
                 Text(exercise.name)
-                    .font(.subheadline.weight(.medium))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(IronColor.label)
                 HStack(spacing: 6) {
-                    Text(exercise.muscleGroup.rawValue)
-                    Text("·")
+                    MuscleBadge(group: exercise.muscleGroup)
                     Text(exercise.equipment.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(IronColor.labelTertiary)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            }
+            if exercise.isCustom {
+                Spacer()
+                Text("Custom")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(IronColor.accentPurple)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(IronColor.accentPurple.opacity(0.12))
+                    .clipShape(Capsule())
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
 
@@ -96,21 +112,60 @@ struct ExerciseDetailView: View {
     let exercise: Exercise
 
     var body: some View {
-        List {
-            Section {
-                LabeledContent("Muscle Group", value: exercise.muscleGroup.rawValue)
-                LabeledContent("Equipment", value: exercise.equipment.rawValue)
-            }
+        ZStack {
+            IronColor.bg.ignoresSafeArea()
+            List {
+                Section {
+                    HStack {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: IronSpacing.radiusSm)
+                                .fill(IronColor.muscle(exercise.muscleGroup).opacity(0.12))
+                                .frame(width: 56, height: 56)
+                            Image(systemName: exercise.muscleGroup.icon)
+                                .font(.system(size: 26))
+                                .foregroundStyle(IronColor.muscle(exercise.muscleGroup))
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(exercise.name).font(.headline).foregroundStyle(IronColor.label)
+                            MuscleBadge(group: exercise.muscleGroup)
+                        }
+                        .padding(.leading, 4)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .listRowBackground(IronColor.surface)
 
-            if !exercise.instructions.isEmpty {
-                Section("Instructions") {
-                    Text(exercise.instructions)
-                        .foregroundStyle(.secondary)
+                Section("Details") {
+                    detailRow("Muscle Group", value: exercise.muscleGroup.rawValue)
+                    detailRow("Equipment", value: exercise.equipment.rawValue)
+                    if exercise.isCustom { detailRow("Type", value: "Custom Exercise") }
+                }
+                .listRowBackground(IronColor.surface)
+                .listRowSeparatorTint(IronColor.border)
+
+                if !exercise.instructions.isEmpty {
+                    Section("Instructions") {
+                        Text(exercise.instructions)
+                            .font(.subheadline)
+                            .foregroundStyle(IronColor.labelSecondary)
+                            .lineSpacing(4)
+                    }
+                    .listRowBackground(IronColor.surface)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .listStyle(.insetGrouped)
         }
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func detailRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(IronColor.labelSecondary).font(.subheadline)
+            Spacer()
+            Text(value).foregroundStyle(IronColor.label).font(.subheadline.weight(.medium))
+        }
     }
 }
 
@@ -124,46 +179,51 @@ struct CreateExerciseView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Details") {
-                    TextField("Exercise name", text: $name)
-                    Picker("Muscle Group", selection: $muscleGroup) {
-                        ForEach(Exercise.MuscleGroup.allCases, id: \.self) { group in
-                            Text(group.rawValue).tag(group)
+            ZStack {
+                IronColor.bg.ignoresSafeArea()
+                List {
+                    Section("Exercise Details") {
+                        TextField("Name (e.g. Cable Fly)", text: $name)
+                            .foregroundStyle(IronColor.label)
+                            .listRowBackground(IronColor.surface)
+                        Picker("Muscle Group", selection: $muscleGroup) {
+                            ForEach(Exercise.MuscleGroup.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                         }
-                    }
-                    Picker("Equipment", selection: $equipment) {
-                        ForEach(Exercise.Equipment.allCases, id: \.self) { eq in
-                            Text(eq.rawValue).tag(eq)
+                        .foregroundStyle(IronColor.label)
+                        .listRowBackground(IronColor.surface)
+                        Picker("Equipment", selection: $equipment) {
+                            ForEach(Exercise.Equipment.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                         }
+                        .foregroundStyle(IronColor.label)
+                        .listRowBackground(IronColor.surface)
                     }
-                }
+                    .listRowSeparatorTint(IronColor.border)
 
-                Section("Instructions (optional)") {
-                    TextEditor(text: $instructions)
-                        .frame(minHeight: 80)
+                    Section("Instructions (Optional)") {
+                        TextEditor(text: $instructions)
+                            .frame(minHeight: 80)
+                            .foregroundStyle(IronColor.label)
+                            .listRowBackground(IronColor.surface)
+                    }
                 }
+                .scrollContentBackground(.hidden)
+                .listStyle(.insetGrouped)
             }
             .navigationTitle("New Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.foregroundStyle(IronColor.labelSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let exercise = Exercise(
-                            name: name,
-                            muscleGroup: muscleGroup,
-                            equipment: equipment,
-                            instructions: instructions,
-                            isCustom: true
-                        )
-                        modelContext.insert(exercise)
-                        try? modelContext.save()
-                        dismiss()
+                        let ex = Exercise(name: name.trimmingCharacters(in: .whitespaces),
+                                         muscleGroup: muscleGroup, equipment: equipment,
+                                         instructions: instructions, isCustom: true)
+                        modelContext.insert(ex); try? modelContext.save(); dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .foregroundStyle(IronColor.accent)
                 }
             }
         }

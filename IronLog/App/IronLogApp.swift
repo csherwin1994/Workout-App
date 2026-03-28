@@ -6,6 +6,7 @@ struct IronLogApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(.dark)
         }
         .modelContainer(for: [
             WorkoutSession.self,

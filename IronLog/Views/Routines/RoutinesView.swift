@@ -4,71 +4,83 @@ import SwiftData
 struct RoutinesView: View {
     @Query(sort: \Routine.createdAt, order: .reverse) private var routines: [Routine]
     @Environment(\.modelContext) private var modelContext
-    @State private var showingCreateRoutine = false
+    @State private var showingCreate = false
 
     var body: some View {
         NavigationStack {
-            Group {
+            ZStack {
+                IronColor.bg.ignoresSafeArea()
+
                 if routines.isEmpty {
-                    ContentUnavailableView(
-                        "No Routines",
-                        systemImage: "repeat",
-                        description: Text("Create routines to quickly start structured workouts.")
+                    EmptyStateView(
+                        icon: "repeat",
+                        title: "No Routines Yet",
+                        message: "Create routines to quickly start structured workouts without planning each time.",
+                        actionTitle: "Create Routine",
+                        action: { showingCreate = true }
                     )
                 } else {
                     List {
                         ForEach(routines) { routine in
-                            NavigationLink {
-                                RoutineDetailView(routine: routine)
-                            } label: {
+                            NavigationLink { RoutineDetailView(routine: routine) } label: {
                                 RoutineRow(routine: routine)
                             }
+                            .listRowBackground(IronColor.surface)
+                            .listRowSeparatorTint(IronColor.border)
+                            .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         }
-                        .onDelete(perform: deleteRoutines)
+                        .onDelete { offsets in
+                            offsets.forEach { modelContext.delete(routines[$0]) }
+                            try? modelContext.save()
+                        }
                     }
+                    .scrollContentBackground(.hidden)
+                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("Routines")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingCreateRoutine = true
-                    } label: {
-                        Image(systemName: "plus")
+                    Button { showingCreate = true } label: {
+                        Image(systemName: "plus").foregroundStyle(IronColor.accent)
                     }
                 }
             }
-            .sheet(isPresented: $showingCreateRoutine) {
-                CreateRoutineView()
-            }
+            .sheet(isPresented: $showingCreate) { CreateRoutineView() }
         }
-    }
-
-    private func deleteRoutines(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(routines[index])
-        }
-        try? modelContext.save()
     }
 }
 
 struct RoutineRow: View {
     let routine: Routine
 
+    private var muscles: [Exercise.MuscleGroup] {
+        Array(Set(routine.exercises.map(\.exerciseMuscleGroup)))
+            .compactMap { Exercise.MuscleGroup(rawValue: $0) }
+            .prefix(3)
+            .map { $0 }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(routine.name)
-                .font(.headline)
-            HStack(spacing: 12) {
-                Label("\(routine.exerciseCount) exercises", systemImage: "dumbbell")
-                if let lastUsed = routine.lastUsedAt {
-                    Label(lastUsed.formatted(.relative(presentation: .named)), systemImage: "clock")
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(routine.name)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(IronColor.label)
+                Spacer()
+                Text("\(routine.exerciseCount) ex")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(IronColor.labelSecondary)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            if !muscles.isEmpty {
+                HStack(spacing: 5) { ForEach(muscles, id: \.self) { MuscleBadge(group: $0) } }
+            }
+            if let last = routine.lastUsedAt {
+                Text("Last used \(last.formatted(.relative(presentation: .named)))")
+                    .font(.caption)
+                    .foregroundStyle(IronColor.labelTertiary)
+            }
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -76,68 +88,73 @@ struct RoutineDetailView: View {
     @Bindable var routine: Routine
     @Environment(\.modelContext) private var modelContext
     @State private var showingExercisePicker = false
-    @State private var isEditing = false
 
-    var sortedExercises: [RoutineExercise] {
+    private var sortedExercises: [RoutineExercise] {
         routine.exercises.sorted { $0.orderIndex < $1.orderIndex }
     }
 
     var body: some View {
-        List {
-            Section {
-                if isEditing {
-                    TextField("Routine name", text: $routine.name)
-                } else {
-                    if !routine.notes.isEmpty {
-                        Text(routine.notes).foregroundStyle(.secondary)
+        ZStack {
+            IronColor.bg.ignoresSafeArea()
+            List {
+                Section("Exercises") {
+                    ForEach(sortedExercises) { ex in
+                        RoutineExerciseRow(exercise: ex)
+                            .listRowBackground(IronColor.surface)
+                            .listRowSeparatorTint(IronColor.border)
+                    }
+                    .onDelete { offsets in
+                        let sorted = sortedExercises
+                        offsets.forEach { idx in
+                            let ex = sorted[idx]
+                            routine.exercises.removeAll { $0.id == ex.id }
+                            modelContext.delete(ex)
+                        }
+                        try? modelContext.save()
+                    }
+                    .onMove { from, to in
+                        var sorted = sortedExercises
+                        sorted.move(fromOffsets: from, toOffset: to)
+                        for (i, ex) in sorted.enumerated() { ex.orderIndex = i }
+                        try? modelContext.save()
+                    }
+
+                    Button {
+                        showingExercisePicker = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill").foregroundStyle(IronColor.accent)
+                            Text("Add Exercise").foregroundStyle(IronColor.accent)
+                                .font(.subheadline.weight(.medium))
+                        }
+                    }
+                    .listRowBackground(IronColor.surface)
+                }
+
+                if !routine.notes.isEmpty {
+                    Section("Notes") {
+                        Text(routine.notes)
+                            .font(.subheadline)
+                            .foregroundStyle(IronColor.labelSecondary)
+                            .listRowBackground(IronColor.surface)
                     }
                 }
             }
-
-            Section("Exercises") {
-                ForEach(sortedExercises) { exercise in
-                    RoutineExerciseRow(exercise: exercise)
-                }
-                .onDelete { offsets in
-                    for index in offsets {
-                        let ex = sortedExercises[index]
-                        routine.exercises.removeAll { $0.id == ex.id }
-                        modelContext.delete(ex)
-                    }
-                    try? modelContext.save()
-                }
-                .onMove { from, to in
-                    var sorted = sortedExercises
-                    sorted.move(fromOffsets: from, toOffset: to)
-                    for (index, ex) in sorted.enumerated() {
-                        ex.orderIndex = index
-                    }
-                    try? modelContext.save()
-                }
-
-                Button {
-                    showingExercisePicker = true
-                } label: {
-                    Label("Add Exercise", systemImage: "plus")
-                }
-            }
+            .scrollContentBackground(.hidden)
+            .listStyle(.insetGrouped)
         }
         .navigationTitle(routine.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                EditButton()
-            }
-        }
+        .toolbar { ToolbarItem(placement: .primaryAction) { EditButton().foregroundStyle(IronColor.accent) } }
         .sheet(isPresented: $showingExercisePicker) {
             ExercisePickerSheet { exercise in
-                let routineExercise = RoutineExercise(
+                let re = RoutineExercise(
                     exerciseName: exercise.name,
                     exerciseMuscleGroup: exercise.muscleGroup.rawValue,
                     orderIndex: routine.exercises.count
                 )
-                modelContext.insert(routineExercise)
-                routine.exercises.append(routineExercise)
+                modelContext.insert(re)
+                routine.exercises.append(re)
                 try? modelContext.save()
             }
         }
@@ -149,15 +166,19 @@ struct RoutineExerciseRow: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(exercise.exerciseName).font(.subheadline.weight(.medium))
-                Text("\(exercise.targetSets) sets × \(exercise.targetReps) reps")
-                    .font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(exercise.exerciseName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(IronColor.label)
+                Text("\(exercise.targetSets) × \(exercise.targetReps) reps")
+                    .font(.caption)
+                    .foregroundStyle(IronColor.labelSecondary)
             }
             Spacer()
             if exercise.targetWeight > 0 {
-                Text(String(format: "%.1f kg", exercise.targetWeight))
-                    .font(.caption).foregroundStyle(.secondary)
+                Text(String(format: "%.0f kg", exercise.targetWeight))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(IronColor.accent)
             }
         }
     }
@@ -171,57 +192,56 @@ struct CreateRoutineView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Routine Details") {
-                    TextField("Routine name (e.g. Push Day)", text: $name)
-                    TextField("Notes (optional)", text: $notes, axis: .vertical)
-                        .lineLimit(3)
+            ZStack {
+                IronColor.bg.ignoresSafeArea()
+                List {
+                    Section("Details") {
+                        TextField("Routine name (e.g. Push Day)", text: $name)
+                            .foregroundStyle(IronColor.label)
+                            .listRowBackground(IronColor.surface)
+                        TextField("Notes (optional)", text: $notes, axis: .vertical)
+                            .lineLimit(3)
+                            .foregroundStyle(IronColor.label)
+                            .listRowBackground(IronColor.surface)
+                    }
+                    .listRowSeparatorTint(IronColor.border)
                 }
+                .scrollContentBackground(.hidden)
+                .listStyle(.insetGrouped)
             }
             .navigationTitle("New Routine")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { dismiss() }.foregroundStyle(IronColor.labelSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
-                        let routine = Routine(name: name, notes: notes)
-                        modelContext.insert(routine)
-                        try? modelContext.save()
-                        dismiss()
+                        let r = Routine(name: name.trimmingCharacters(in: .whitespaces), notes: notes)
+                        modelContext.insert(r); try? modelContext.save(); dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .foregroundStyle(IronColor.accent)
                 }
             }
         }
     }
 }
 
-#Preview("Routines – with data") {
+#Preview("Routines") {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Routine.self, Exercise.self, WorkoutSession.self, configurations: config)
-    let context = container.mainContext
-
-    for (rName, exercises) in [
-        ("Push Day", [("Bench Press", "Chest", 4, 8), ("Overhead Press", "Shoulders", 3, 10), ("Tricep Pushdown", "Triceps", 3, 12)]),
-        ("Pull Day", [("Deadlift", "Back", 3, 5), ("Pull Up", "Back", 3, 8), ("Barbell Curl", "Biceps", 3, 12)]),
-        ("Leg Day", [("Squat", "Legs", 4, 6), ("Leg Press", "Legs", 3, 10), ("Romanian Deadlift", "Legs", 3, 10)])
-    ] {
-        let routine = Routine(name: rName)
-        context.insert(routine)
-        for (i, (exName, muscle, sets, reps)) in exercises.enumerated() {
-            let re = RoutineExercise(exerciseName: exName, exerciseMuscleGroup: muscle,
-                                     orderIndex: i, targetSets: sets, targetReps: reps)
-            context.insert(re)
-            routine.exercises.append(re)
+    let ctx = container.mainContext
+    for (name, exercises) in [
+        ("Push Day", [("Bench Press","Chest",4,8), ("OHP","Shoulders",3,10), ("Tricep Pushdown","Triceps",3,12)]),
+        ("Pull Day", [("Deadlift","Back",3,5), ("Pull Up","Back",3,8), ("Curl","Biceps",3,12)])
+    ] as [(String, [(String,String,Int,Int)])] {
+        let r = Routine(name: name); ctx.insert(r)
+        for (i, (ex, muscle, sets, reps)) in exercises.enumerated() {
+            let re = RoutineExercise(exerciseName: ex, exerciseMuscleGroup: muscle, orderIndex: i, targetSets: sets, targetReps: reps)
+            ctx.insert(re); r.exercises.append(re)
         }
     }
-    try? context.save()
+    try? ctx.save()
     return RoutinesView().modelContainer(container)
-}
-
-#Preview("Routines – empty") {
-    RoutinesView()
-        .modelContainer(for: [Routine.self, Exercise.self, WorkoutSession.self], inMemory: true)
 }
