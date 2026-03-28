@@ -163,6 +163,7 @@ struct RoutineDetailView: View {
 
 struct RoutineExerciseRow: View {
     @Bindable var exercise: RoutineExercise
+    @AppStorage("weightUnit") private var weightUnit = "kg"
 
     var body: some View {
         HStack {
@@ -176,7 +177,7 @@ struct RoutineExerciseRow: View {
             }
             Spacer()
             if exercise.targetWeight > 0 {
-                Text(String(format: "%.0f kg", exercise.targetWeight))
+                Text(String(format: "%.0f \(weightUnit)", exercise.targetWeight))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(VoltColor.accent)
             }

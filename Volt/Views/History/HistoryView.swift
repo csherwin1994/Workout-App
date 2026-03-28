@@ -3,6 +3,7 @@ import SwiftData
 
 struct HistoryView: View {
     @Query(sort: \WorkoutSession.startDate, order: .reverse) private var sessions: [WorkoutSession]
+    @Environment(\.modelContext) private var modelContext
 
     private var completed: [WorkoutSession] { sessions.filter { $0.endDate != nil } }
 
@@ -30,6 +31,10 @@ struct HistoryView: View {
                                     .listRowBackground(VoltColor.surface)
                                     .listRowSeparatorTint(VoltColor.border)
                                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                                }
+                                .onDelete { offsets in
+                                    offsets.forEach { modelContext.delete(workouts[$0]) }
+                                    try? modelContext.save()
                                 }
                             } header: {
                                 Text(month)

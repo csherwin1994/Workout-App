@@ -163,6 +163,7 @@ struct ExerciseLogCard: View {
     let vm: ActiveWorkoutViewModel
     @Environment(\.modelContext) private var modelContext
     @AppStorage("weightUnit") private var weightUnit = "kg"
+    @State private var showingRemove = false
 
     private var sortedSets: [WorkoutSet] {
         log.sets.sorted { $0.orderIndex < $1.orderIndex }
@@ -181,7 +182,7 @@ struct ExerciseLogCard: View {
                     }
                 }
                 Spacer()
-                VoltIconButton(icon: "ellipsis", action: {})
+                VoltIconButton(icon: "ellipsis", action: { showingRemove = true })
             }
             .padding(VoltSpacing.md)
 
@@ -231,6 +232,14 @@ struct ExerciseLogCard: View {
         .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
         .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
             .stroke(VoltColor.border, lineWidth: 0.5))
+        .confirmationDialog("Remove \(log.exerciseName)?", isPresented: $showingRemove, titleVisibility: .visible) {
+            Button("Remove Exercise", role: .destructive) {
+                vm.session?.exerciseLogs.removeAll { $0.id == log.id }
+                modelContext.delete(log)
+                try? modelContext.save()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 }
 

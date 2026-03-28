@@ -7,6 +7,8 @@ struct WorkoutTabView: View {
     @State private var showingActiveWorkout = false
     @State private var showingAIGenerator = false
     @State private var showingRoutinePicker = false
+    @State private var showingAPIKeyAlert = false
+    @AppStorage("anthropicAPIKey") private var anthropicAPIKey = ""
 
     @Query(sort: \Routine.createdAt, order: .reverse) private var routines: [Routine]
     @Query(sort: \WorkoutSession.startDate, order: .reverse) private var sessions: [WorkoutSession]
@@ -148,12 +150,23 @@ struct WorkoutTabView: View {
 
             HStack(spacing: 10) {
                 // AI Workout
-                Button { showingAIGenerator = true } label: {
+                Button {
+                    if anthropicAPIKey.trimmingCharacters(in: .whitespaces).isEmpty {
+                        showingAPIKeyAlert = true
+                    } else {
+                        showingAIGenerator = true
+                    }
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 14, weight: .semibold))
                         Text("AI Workout")
                             .font(.system(size: 14, weight: .semibold))
+                        if anthropicAPIKey.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(VoltColor.warning)
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
@@ -162,6 +175,11 @@ struct WorkoutTabView: View {
                     .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
                     .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
                         .stroke(VoltColor.accentPurple.opacity(0.3), lineWidth: 0.5))
+                }
+                .alert("API Key Required", isPresented: $showingAPIKeyAlert) {
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Add your Anthropic API key in Profile → AI Workout Builder to use this feature.")
                 }
 
                 // Routine picker
@@ -200,7 +218,7 @@ struct WorkoutTabView: View {
                 HStack(spacing: 12) {
                     ForEach(routines) { routine in
                         RoutineQuickCard(routine: routine) {
-                            guard !workoutVM.isActive else { return }
+                            guard !workoutVM.isActive else { showingActiveWorkout = true; return }
                             workoutVM.startFromRoutine(routine, context: modelContext)
                             showingActiveWorkout = true
                         }

@@ -12,7 +12,8 @@ A Hevy-inspired workout tracking app built with **SwiftUI** and **SwiftData**, t
 | **Custom Exercises** | Create your own exercises |
 | **Routines** | Build and reuse workout templates |
 | **History** | Browse past workouts with full set details |
-| **Profile & Stats** | Total workouts, sets, volume this week |
+| **Progress Charts** | Weekly volume, 30-day heatmap, per-exercise strength trends |
+| **Profile & Stats** | Total workouts, sets, volume — with streak tracking |
 
 ## Project Structure
 
@@ -58,7 +59,7 @@ Volt/
 5. On first launch the app auto-seeds 50+ exercises
 
 > **Note:** To run on a real device you need a free Apple Developer account.
-> Go to **Xcode → Signing & Capabilities** and change the bundle ID to something unique (e.g. `com.yourname.Volt`).
+> Go to **Xcode → Signing & Capabilities**, set your Team, and the bundle ID `com.sherwinlabs.Volt` is already configured.
 
 ## Architecture
 
@@ -68,9 +69,12 @@ Volt/
 
 ## Roadmap / Next Steps
 
-- [ ] Charts for progress over time (weight lifted per exercise)
-- [ ] Personal records (PR) detection and badges
-- [ ] iCloud sync via CloudKit
+- [ ] Login / auth screens + cloud backup (Supabase)
+- [ ] Profile photo support
+- [ ] Strava integration
+- [ ] Personal records (PR) detection and badges during workouts
+- [ ] Apple Health sync
 - [ ] Apple Watch companion app
 - [ ] Plate calculator
 - [ ] Body measurements & weight log
+- [ ] Push notification reminders

@@ -24,6 +24,7 @@ final class ActiveWorkoutViewModel {
     }
 
     func startFromRoutine(_ routine: Routine, context: ModelContext) {
+        routine.lastUsedAt = Date()
         startWorkout(title: routine.name, context: context)
         guard let session else { return }
 
