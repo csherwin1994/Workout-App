@@ -58,6 +58,7 @@ struct HistoryView: View {
 // MARK: - Row
 struct WorkoutHistoryRow: View {
     let session: WorkoutSession
+    @AppStorage("weightUnit") private var weightUnit = "kg"
 
     private var muscles: [Exercise.MuscleGroup] {
         Set(session.exerciseLogs.map(\.exerciseMuscleGroup))
@@ -90,8 +91,8 @@ struct WorkoutHistoryRow: View {
                 historyPill("\(session.totalSets)", label: "sets", icon: "dumbbell")
                 historyPill(
                     session.totalVolume >= 1000
-                        ? String(format: "%.1fk kg", session.totalVolume/1000)
-                        : String(format: "%.0f kg", session.totalVolume),
+                        ? String(format: "%.1fk \(weightUnit)", session.totalVolume/1000)
+                        : String(format: "%.0f \(weightUnit)", session.totalVolume),
                     label: "vol", icon: "scalemass"
                 )
                 historyPill("\(session.exerciseLogs.count)", label: "exercises", icon: "list.bullet")
@@ -117,6 +118,7 @@ struct WorkoutHistoryRow: View {
 // MARK: - Detail
 struct WorkoutDetailView: View {
     let session: WorkoutSession
+    @AppStorage("weightUnit") private var weightUnit = "kg"
 
     private var sortedLogs: [ExerciseLog] {
         session.exerciseLogs.sorted { $0.orderIndex < $1.orderIndex }
@@ -137,7 +139,7 @@ struct WorkoutDetailView: View {
                             value: session.totalVolume >= 1000
                                 ? String(format: "%.1fk", session.totalVolume/1000)
                                 : String(format: "%.0f", session.totalVolume),
-                            label: "Volume kg",
+                            label: "Volume \(weightUnit)",
                             icon: "scalemass.fill",
                             color: VoltColor.accentGreen
                         )
@@ -156,7 +158,7 @@ struct WorkoutDetailView: View {
                                     .foregroundStyle(VoltColor.labelSecondary)
                                 Spacer()
                                 Text(set.weight > 0
-                                     ? String(format: "%.1f kg × %d", set.weight, set.reps)
+                                     ? String(format: "%.1f \(weightUnit) × %d", set.weight, set.reps)
                                      : "\(set.reps) reps")
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(VoltColor.label)

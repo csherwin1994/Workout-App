@@ -5,6 +5,7 @@ struct ActiveWorkoutView: View {
     @Bindable var vm: ActiveWorkoutViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("weightUnit") private var weightUnit = "kg"
     @State private var showingExercisePicker = false
     @State private var showingFinish = false
     @State private var showingDiscard = false
@@ -85,7 +86,7 @@ struct ActiveWorkoutView: View {
                 volumePill(value: "\(totalSets)", label: "sets")
                 volumePill(value: totalVol >= 1000
                     ? String(format: "%.1fk", totalVol/1000)
-                    : String(format: "%.0f kg", totalVol),
+                    : String(format: "%.0f \(weightUnit)", totalVol),
                     label: "volume")
                 volumePill(value: "\(sortedLogs.count)", label: "exercises")
             }
@@ -161,6 +162,7 @@ struct ExerciseLogCard: View {
     let log: ExerciseLog
     let vm: ActiveWorkoutViewModel
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("weightUnit") private var weightUnit = "kg"
 
     private var sortedSets: [WorkoutSet] {
         log.sets.sorted { $0.orderIndex < $1.orderIndex }
@@ -189,7 +191,7 @@ struct ExerciseLogCard: View {
             HStack {
                 Text("SET").frame(width: 34, alignment: .center)
                 Spacer()
-                Text("KG").frame(width: 72, alignment: .center)
+                Text(weightUnit.uppercased()).frame(width: 72, alignment: .center)
                 Text("REPS").frame(width: 72, alignment: .center)
                 Image(systemName: "checkmark").frame(width: 36, alignment: .center)
             }
