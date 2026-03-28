@@ -137,7 +137,7 @@ final class AIWorkoutService {
 
     var state: State = .idle
 
-    @AppStorage("anthropicAPIKey") private var apiKey: String = ""
+    @ObservationIgnored @AppStorage("anthropicAPIKey") private var apiKey: String = ""
 
     var hasAPIKey: Bool { !apiKey.trimmingCharacters(in: .whitespaces).isEmpty }
 
