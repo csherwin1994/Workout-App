@@ -6,6 +6,7 @@ struct WorkoutTabView: View {
     @State private var workoutVM = ActiveWorkoutViewModel()
     @State private var showingActiveWorkout = false
     @State private var showingRoutinePicker = false
+    @State private var showingCreateRoutine = false
 
     @Query(sort: \Routine.createdAt, order: .reverse) private var routines: [Routine]
     @Query(sort: \WorkoutSession.startDate, order: .reverse) private var sessions: [WorkoutSession]
@@ -72,6 +73,7 @@ struct WorkoutTabView: View {
             .sheet(isPresented: $showingRoutinePicker) {
                 RoutinePickerSheet(workoutVM: workoutVM, showingActiveWorkout: $showingActiveWorkout)
             }
+            .sheet(isPresented: $showingCreateRoutine) { CreateRoutineView() }
         }
         .environment(workoutVM)
     }
@@ -229,6 +231,11 @@ struct WorkoutTabView: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(VoltColor.label)
                 Spacer()
+                Button { showingCreateRoutine = true } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(VoltColor.accent)
+                }
             }
             .padding(.horizontal, VoltSpacing.md)
 
@@ -375,13 +382,20 @@ struct RoutinePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var routines: [Routine]
+    @State private var showingCreate = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 VoltColor.bg.ignoresSafeArea()
                 if routines.isEmpty {
-                    EmptyStateView(icon: "repeat", title: "No Routines", message: "Create routines in the Routines tab to quick-start structured workouts.")
+                    EmptyStateView(
+                        icon: "repeat",
+                        title: "No Routines",
+                        message: "Create a routine to quick-start structured workouts.",
+                        actionTitle: "Create Routine",
+                        action: { showingCreate = true }
+                    )
                 } else {
                     List(routines) { routine in
                         Button {
@@ -410,7 +424,13 @@ struct RoutinePickerSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }.foregroundStyle(VoltColor.labelSecondary)
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button { showingCreate = true } label: {
+                        Image(systemName: "plus").foregroundStyle(VoltColor.accent)
+                    }
+                }
             }
+            .sheet(isPresented: $showingCreate) { CreateRoutineView() }
         }
     }
 }

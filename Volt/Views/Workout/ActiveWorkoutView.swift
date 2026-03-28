@@ -309,6 +309,7 @@ struct SetRow: View {
 struct ExercisePickerSheet: View {
     let onSelect: (Exercise) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var search = ""
     @State private var selectedMuscle: Exercise.MuscleGroup?
@@ -339,28 +340,68 @@ struct ExercisePickerSheet: View {
                     }
                     Divider().background(VoltColor.border)
 
-                    List(filtered) { exercise in
-                        Button {
-                            onSelect(exercise)
-                            dismiss()
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(exercise.name)
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(VoltColor.label)
-                                HStack(spacing: 6) {
-                                    MuscleBadge(group: exercise.muscleGroup)
-                                    Text(exercise.equipment.rawValue)
-                                        .font(.caption)
-                                        .foregroundStyle(VoltColor.labelTertiary)
-                                }
-                            }
-                            .padding(.vertical, 4)
+                    if exercises.isEmpty {
+                        VStack(spacing: VoltSpacing.md) {
+                            Image(systemName: "dumbbell.fill")
+                                .font(.system(size: 40))
+                                .foregroundStyle(VoltColor.labelTertiary)
+                            Text("Exercise library is empty")
+                                .font(.headline)
+                                .foregroundStyle(VoltColor.label)
+                            Text("Visit the Exercises tab to browse and manage your library.")
+                                .font(.subheadline)
+                                .foregroundStyle(VoltColor.labelSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, VoltSpacing.xl)
                         }
-                        .listRowBackground(VoltColor.surface)
-                        .listRowSeparatorTint(VoltColor.border)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if filtered.isEmpty {
+                        VStack(spacing: VoltSpacing.md) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 32))
+                                .foregroundStyle(VoltColor.labelTertiary)
+                            Text("No exercises found")
+                                .font(.headline)
+                                .foregroundStyle(VoltColor.label)
+                            Text("Try a different search or muscle group filter.")
+                                .font(.subheadline)
+                                .foregroundStyle(VoltColor.labelSecondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List(filtered) { exercise in
+                            Button {
+                                onSelect(exercise)
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(VoltColor.muscle(exercise.muscleGroup).opacity(0.12))
+                                            .frame(width: 36, height: 36)
+                                        Image(systemName: exercise.icon)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(VoltColor.muscle(exercise.muscleGroup))
+                                    }
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(exercise.name)
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundStyle(VoltColor.label)
+                                        HStack(spacing: 6) {
+                                            MuscleBadge(group: exercise.muscleGroup)
+                                            Text(exercise.equipment.rawValue)
+                                                .font(.caption)
+                                                .foregroundStyle(VoltColor.labelTertiary)
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .listRowBackground(VoltColor.surface)
+                            .listRowSeparatorTint(VoltColor.border)
+                        }
+                        .scrollContentBackground(.hidden)
                     }
-                    .scrollContentBackground(.hidden)
                 }
             }
             .searchable(text: $search, prompt: "Search exercises")
@@ -371,6 +412,7 @@ struct ExercisePickerSheet: View {
                     Button("Cancel") { dismiss() }.foregroundStyle(VoltColor.labelSecondary)
                 }
             }
+            .onAppear { DataManager.seedExercisesIfNeeded(context: modelContext) }
         }
     }
 }

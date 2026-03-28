@@ -164,7 +164,7 @@ struct ProfileView: View {
                     Image(systemName: supabase.isSyncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up")
                         .foregroundStyle(VoltColor.accent)
                         .frame(width: 28)
-                        .symbolEffect(.rotate, isActive: supabase.isSyncing)
+                        .symbolEffect(.pulse, isActive: supabase.isSyncing)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Sync to Cloud")
                             .font(.subheadline.weight(.medium))
