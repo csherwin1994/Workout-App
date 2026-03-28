@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ProfileView: View {
+    @Binding var selectedTab: ContentView.Tab
     @Query private var sessions: [WorkoutSession]
     @Environment(\.modelContext) private var modelContext
     @Environment(SupabaseManager.self) private var supabase
@@ -112,9 +113,15 @@ struct ProfileView: View {
     private var statsSection: some View {
         Section("Stats") {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ProfileStatCard(value: "\(completed.count)", label: "Total Workouts", icon: "dumbbell.fill", color: VoltColor.accent)
-                ProfileStatCard(value: "\(workoutsThisWeek)", label: "This Week", icon: "calendar", color: VoltColor.accentGreen)
-                ProfileStatCard(value: "\(totalSets)", label: "Total Sets", icon: "repeat", color: VoltColor.accentPurple)
+                ProfileStatCard(value: "\(completed.count)", label: "Total Workouts", icon: "dumbbell.fill", color: VoltColor.accent) {
+                    selectedTab = .history
+                }
+                ProfileStatCard(value: "\(workoutsThisWeek)", label: "This Week", icon: "calendar", color: VoltColor.accentGreen) {
+                    selectedTab = .history
+                }
+                ProfileStatCard(value: "\(totalSets)", label: "Total Sets", icon: "repeat", color: VoltColor.accentPurple) {
+                    selectedTab = .progress
+                }
                 ProfileStatCard(
                     value: totalVolume >= 1_000_000
                         ? String(format: "%.1fM", totalVolume / 1_000_000)
@@ -124,7 +131,9 @@ struct ProfileView: View {
                     label: "Volume (\(weightUnit))",
                     icon: "scalemass.fill",
                     color: VoltColor.warning
-                )
+                ) {
+                    selectedTab = .progress
+                }
             }
             .padding(.vertical, 4)
         }
@@ -234,25 +243,35 @@ struct ProfileStatCard: View {
     let label: String
     let icon: String
     let color: Color
+    let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(color)
-            Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(VoltColor.label)
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(VoltColor.labelSecondary)
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(color)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(color.opacity(0.5))
+                }
+                Text(value)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(VoltColor.label)
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(VoltColor.labelSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(VoltSpacing.md)
+            .background(color.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+            .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
+                .stroke(color.opacity(0.15), lineWidth: 0.5))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(VoltSpacing.md)
-        .background(color.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
-        .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
-            .stroke(color.opacity(0.15), lineWidth: 0.5))
+        .buttonStyle(.plain)
     }
 }
 
@@ -277,7 +296,7 @@ private extension Calendar {
         ctx.insert(ws); log.sets.append(ws); s.exerciseLogs = [log]
     }
     try? ctx.save()
-    return ProfileView()
+    return ProfileView(selectedTab: .constant(.profile))
         .modelContainer(container)
         .environment(SupabaseManager.shared)
 }

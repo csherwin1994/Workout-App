@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     @State private var selectedTab: Tab = .workout
+    @Environment(\.modelContext) private var modelContext
 
     enum Tab { case workout, history, progress, exercises, routines, profile }
 
@@ -27,15 +29,13 @@ struct ContentView: View {
                 .tabItem { Label("Routines", systemImage: "repeat") }
                 .tag(Tab.routines)
 
-            ProfileView()
+            ProfileView(selectedTab: $selectedTab)
                 .tabItem { Label("Profile", systemImage: "person.fill") }
                 .tag(Tab.profile)
         }
         .tint(VoltColor.accent)
+        .onAppear { DataManager.seedExercisesIfNeeded(context: modelContext) }
     }
-
-    // needed to keep 6-tab enum valid even though HIG recommends 5
-    // Tab bar overflow becomes "More" on iOS automatically if > 5
 }
 
 #Preview {

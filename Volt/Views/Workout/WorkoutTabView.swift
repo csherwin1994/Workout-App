@@ -66,7 +66,6 @@ struct WorkoutTabView: View {
                 }
             }
             .navigationBarHidden(true)
-            .onAppear { DataManager.seedExercisesIfNeeded(context: modelContext) }
             .fullScreenCover(isPresented: $showingActiveWorkout) {
                 ActiveWorkoutView(vm: workoutVM)
             }
