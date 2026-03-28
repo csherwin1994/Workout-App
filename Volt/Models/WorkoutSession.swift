@@ -28,7 +28,7 @@ final class WorkoutSession {
     }
 
     var totalVolume: Double {
-        exerciseLogs.flatMap(\.sets).reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+        exerciseLogs.flatMap(\.sets).filter(\.isCompleted).reduce(0) { $0 + ($1.weight * Double($1.reps)) }
     }
 
     var totalSets: Int {

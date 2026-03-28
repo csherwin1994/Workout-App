@@ -31,7 +31,7 @@ struct ActiveWorkoutView: View {
             ExercisePickerSheet { vm.addExercise($0, context: modelContext) }
         }
         .confirmationDialog("Finish Workout?", isPresented: $showingFinish, titleVisibility: .visible) {
-            Button("Finish & Save") { vm.finishWorkout(); dismiss() }
+            Button("Finish & Save") { vm.finishWorkout(context: modelContext); dismiss() }
             Button("Cancel", role: .cancel) {}
         } message: { Text("Save \(sortedLogs.count) exercises to your history.") }
         .confirmationDialog("Discard Workout?", isPresented: $showingDiscard, titleVisibility: .visible) {
@@ -154,6 +154,14 @@ struct ActiveWorkoutView: View {
             .padding(.bottom, VoltSpacing.xxl)
         }
         .scrollIndicators(.hidden)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(VoltColor.accent)
+            }
+        }
     }
 }
 

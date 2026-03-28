@@ -92,9 +92,9 @@ final class ActiveWorkoutViewModel {
         try? context.save()
     }
 
-    func finishWorkout() {
+    func finishWorkout(context: ModelContext) {
         session?.endDate = Date()
-        try? modelContext?.save()
+        try? context.save()
         stopTimers()
         isActive = false
     }

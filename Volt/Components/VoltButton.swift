@@ -102,7 +102,7 @@ struct VoltIconButton: View {
     VStack(spacing: 12) {
         VoltButton("Start Workout", icon: "plus.circle.fill") {}
         VoltButton("Browse Routines", icon: "repeat", style: .secondary) {}
-        VoltButton("Generate AI Workout", icon: "sparkles", style: .ghost) {}
+        VoltButton("Suggest Workout", icon: "sparkles", style: .ghost) {}
         VoltButton("Discard", style: .danger) {}
         VoltButton("Generating...", isLoading: true) {}
     }

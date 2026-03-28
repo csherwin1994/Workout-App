@@ -153,6 +153,7 @@ struct ExerciseProgressChart: View {
     let sessions: [WorkoutSession]
     let exercises: [Exercise]
     @Binding var selectedExercise: String?
+    @AppStorage("weightUnit") private var weightUnit = "kg"
 
     private struct Point: Identifiable {
         let id = UUID()
@@ -201,7 +202,7 @@ struct ExerciseProgressChart: View {
                     if pr > 0 {
                         HStack(spacing: 6) {
                             Image(systemName: "trophy.fill").foregroundStyle(.yellow)
-                            Text("PR: \(String(format: "%.1f kg", pr))")
+                            Text("PR: \(String(format: "%.1f \(weightUnit)", pr))")
                                 .font(.subheadline.weight(.bold))
                                 .foregroundStyle(VoltColor.label)
                             Spacer()
