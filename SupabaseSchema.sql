@@ -1,4 +1,4 @@
--- IronLog Supabase Schema
+-- Volt Supabase Schema
 -- Run this in your Supabase project: Dashboard > SQL Editor > New query
 
 -- Enable UUID extension

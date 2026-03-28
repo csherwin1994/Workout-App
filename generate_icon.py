@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-Generate IronLog app icons using only Python stdlib.
+Generate Volt app icons using only Python stdlib.
 Produces PNG files at all required iOS sizes.
-Design: Dark (#0A0A0B) rounded-rect background,
-        blue-to-purple gradient dumbbell / "IL" mark.
+Design: Dark (#0A0A0B) background with blue-to-purple gradient Split V mark.
 """
 import struct, zlib, math, os
 
-OUT = "IronLog/Assets.xcassets/AppIcon.appiconset"
+OUT = "Volt/Assets.xcassets/AppIcon.appiconset"
 
 SIZES = [
     ("AppIcon-20@2x.png",  40),
@@ -35,9 +34,7 @@ def write_png(path, pixels, w, h):
             raw += bytes([r, g, b, a])
 
     compressed = zlib.compress(raw, 9)
-    ihdr = struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)  # 8-bit RGB (not RGBA)
-    # Use RGBA (color type 6)
-    ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
+    ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)  # 8-bit RGBA
 
     png  = b"\x89PNG\r\n\x1a\n"
     png += chunk(b"IHDR", ihdr)
@@ -57,91 +54,79 @@ def generate_icon(size):
     w = h = size
     pixels = []
 
-    # Colours
-    BG       = (10, 10, 11)
-    BLUE     = (91, 142, 255)
-    PURPLE   = (167, 139, 250)
-    WHITE    = (255, 255, 255)
-    DARK_BG  = (10, 10, 11)
+    # Colours from brand board
+    BG     = (10, 10, 11)      # #0A0A0B
+    BLUE   = (91, 142, 255)    # #5B8EFF
+    PURPLE = (167, 139, 250)   # #A78BFA
 
-    corner_r = size * 0.22  # iOS icon corner radius ratio
-
-    def in_rounded_rect(x, y, rx, ry, rw, rh, r):
-        # Returns True if point (x,y) is inside rounded rect
-        if x < rx or x > rx + rw or y < ry or y > ry + rh:
-            return False
-        # Check corners
-        corners = [(rx+r, ry+r), (rx+rw-r, ry+r), (rx+r, ry+rh-r), (rx+rw-r, ry+rh-r)]
-        for (cx, cy) in corners:
-            if x < cx - r or x > cx + r or y < cy - r or y > cy + r:
-                continue
-            if (x - cx)**2 + (y - cy)**2 > r**2:
-                # Near a corner — check if outside circle
-                if x < cx and y < cy:  # top-left corner
-                    if (x - (rx+r))**2 + (y - (ry+r))**2 > r**2 and x < rx+r and y < ry+r:
-                        return False
-                elif x > cx and y < cy:  # top-right corner
-                    if (x - (rx+rw-r))**2 + (y - (ry+r))**2 > r**2 and x > rx+rw-r and y < ry+r:
-                        return False
-                elif x < cx and y > cy:  # bottom-left corner
-                    if (x - (rx+r))**2 + (y - (ry+rh-r))**2 > r**2 and x < rx+r and y > ry+rh-r:
-                        return False
-                elif x > cx and y > cy:  # bottom-right corner
-                    if (x - (rx+rw-r))**2 + (y - (ry+rh-r))**2 > r**2 and x > rx+rw-r and y > ry+rh-r:
-                        return False
-        return True
-
-    def in_circle(x, y, cx, cy, r):
-        return (x - cx)**2 + (y - cy)**2 <= r**2
-
-    def in_rect(x, y, rx, ry, rw, rh):
-        return rx <= x <= rx + rw and ry <= y <= ry + rh
-
-    # Dumbbell geometry (scaled to size)
     s = size / 100.0  # scale factor
 
-    # Bar
-    bar_x1 = 20 * s
-    bar_x2 = 80 * s
-    bar_y1 = 47 * s
-    bar_y2 = 53 * s
+    # Split V mark geometry — a V shape split down the middle
+    # with a small gap, creating the premium "Split V" logo
+    cx = 50 * s   # centre x
+    top_y = 22 * s    # top of V arms
+    bot_y = 78 * s    # bottom point of V
+    gap = 2.5 * s     # half-gap between the two halves
+    arm_w = 7.5 * s   # thickness of each V arm
 
-    # Left weight plates
-    lp_x = 16 * s
-    lp_r = 14 * s
-    lp_inner_r = 9 * s
-    # Right weight plates
-    rp_x = 84 * s
-    rp_r = 14 * s
-    rp_inner_r = 9 * s
+    # The V is defined by two diagonal strokes meeting at the bottom
+    # Left arm: from top-left down to bottom-centre (with gap)
+    # Right arm: from top-right down to bottom-centre (with gap)
 
-    cy = 50 * s  # centre y
+    # Left arm endpoints
+    left_top_outer = (cx - 22 * s, top_y)
+    left_top_inner = (cx - 22 * s + arm_w, top_y)
+    left_bot_outer = (cx - gap, bot_y)
+    left_bot_inner = (cx - gap, bot_y - arm_w * 1.2)
+
+    # Right arm endpoints
+    right_top_outer = (cx + 22 * s, top_y)
+    right_top_inner = (cx + 22 * s - arm_w, top_y)
+    right_bot_outer = (cx + gap, bot_y)
+    right_bot_inner = (cx + gap, bot_y - arm_w * 1.2)
+
+    def point_in_parallelogram(px, py, x1, y1, x2, y2, x3, y3, x4, y4):
+        """Check if point is inside a quadrilateral defined by 4 vertices (in order)."""
+        def cross(ox, oy, ax, ay, bx, by):
+            return (ax - ox) * (by - oy) - (ay - oy) * (bx - ox)
+
+        d1 = cross(px, py, x1, y1, x2, y2)
+        d2 = cross(px, py, x2, y2, x3, y3)
+        d3 = cross(px, py, x3, y3, x4, y4)
+        d4 = cross(px, py, x4, y4, x1, y1)
+
+        has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0) or (d4 < 0)
+        has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0) or (d4 > 0)
+
+        return not (has_neg and has_pos)
 
     for y in range(h):
         for x in range(w):
-            # Background — pure dark
             r, g, b, a = BG[0], BG[1], BG[2], 255
 
-            # Gradient position for icon mark (left=blue, right=purple)
-            t = (x / w)
+            # Gradient: diagonal from top-left (blue) to bottom-right (purple)
+            t = ((x / w) + (y / h)) / 2.0
             grad = lerp_color(BLUE, PURPLE, t)
 
-            # Draw dumbbell
-            on_dumbbell = False
+            on_v = False
 
-            # Bar
-            if in_rect(x, y, bar_x1, bar_y1, bar_x2 - bar_x1, bar_y2 - bar_y1):
-                on_dumbbell = True
+            # Left arm of V (quad: top-outer, top-inner, bot-inner, bot-outer)
+            if point_in_parallelogram(x, y,
+                left_top_outer[0], left_top_outer[1],
+                left_top_inner[0], left_top_inner[1],
+                left_bot_inner[0], left_bot_inner[1],
+                left_bot_outer[0], left_bot_outer[1]):
+                on_v = True
 
-            # Left plate (outer circle minus inner hole)
-            if in_circle(x, y, lp_x, cy, lp_r) and not in_circle(x, y, lp_x, cy, lp_r * 0.35):
-                on_dumbbell = True
+            # Right arm of V (quad: top-inner, top-outer, bot-outer, bot-inner)
+            if point_in_parallelogram(x, y,
+                right_top_inner[0], right_top_inner[1],
+                right_top_outer[0], right_top_outer[1],
+                right_bot_outer[0], right_bot_outer[1],
+                right_bot_inner[0], right_bot_inner[1]):
+                on_v = True
 
-            # Right plate
-            if in_circle(x, y, rp_x, cy, rp_r) and not in_circle(x, y, rp_x, cy, rp_r * 0.35):
-                on_dumbbell = True
-
-            if on_dumbbell:
+            if on_v:
                 r, g, b = grad
 
             pixels.append((r, g, b, a))
