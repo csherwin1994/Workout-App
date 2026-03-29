@@ -59,6 +59,17 @@ final class Exercise {
         case "Back Extension":               return "figure.strengthtraining.functional"
         case "Nordic Curl", "Glute-Ham Raise": return "figure.strengthtraining.functional"
 
+        // Glute-specific bodyweight / banded
+        case "Glute Bridge", "Single Leg Glute Bridge",
+             "Donkey Kick", "Fire Hydrant":            return "figure.strengthtraining.functional"
+        case "Banded Hip Thrust", "Banded Squat":      return "figure.flexibility"
+        case "Band Pull Apart":                        return "figure.flexibility"
+        case "Cable Kickback":                         return "figure.arms.open"
+        case "Cable Pull-Through":                     return "figure.arms.open"
+        case "Hyperextension", "Reverse Hyperextension",
+             "45-Degree Hyperextension",
+             "Smith Machine Hip Thrust":               return "figure.strengthtraining.functional"
+
         // Core — always specific
         case "Plank", "Side Plank",
              "Crunch", "Decline Crunch",
@@ -90,12 +101,14 @@ final class Exercise {
              "Cable Reverse Fly",
              "Cable Lateral Raise",
              "Cable Front Raise",
+             "Cable Upright Row",
              "Cable Curl", "Cable Hammer Curl",
-             "Bayesian Curl",
+             "Bayesian Curl", "Rope Hammer Curl",
+             "Seated Cable Curl",
              "Tricep Pushdown", "Rope Pushdown",
              "Reverse Grip Pushdown",
              "Cable Overhead Tricep Extension",
-             "Cable Kickback",
+             "Single Arm Lat Pulldown",
              "Straight Arm Pulldown":        return "figure.arms.open"
 
         // Dumbbell exercises
@@ -117,7 +130,9 @@ final class Exercise {
              "Bulgarian Split Squat",
              "Walking Lunge", "Reverse Lunge",
              "Step Up", "Single Leg RDL",
-             "Dumbbell Hip Thrust":          return "dumbbell.fill"
+             "Dumbbell Hip Thrust",
+             "Incline Dumbbell Row",
+             "Dumbbell Upright Row":          return "dumbbell.fill"
 
         // Kettlebell exercises
         case "Goblet Squat",
@@ -127,13 +142,16 @@ final class Exercise {
         case "Pec Deck", "Smith Machine Bench Press",
              "Smith Machine Squat",
              "Hack Squat", "Leg Press",
-             "Single Leg Press",
+             "Single Leg Press", "Pendulum Squat",
              "Leg Extension", "Leg Curl",
-             "Seated Leg Curl",
+             "Seated Leg Curl", "Leg Press Calf Raise",
              "Calf Raise", "Seated Calf Raise",
              "Donkey Calf Raise",
              "Lat Pulldown", "Close Grip Lat Pulldown",
+             "Wide Grip Lat Pulldown",
+             "Reverse Grip Lat Pulldown",
              "Preacher Curl", "Machine Curl",
+             "Machine Row",
              "Machine Shoulder Press",
              "Rear Delt Fly",
              "Abductor Machine",
@@ -159,9 +177,11 @@ final class Exercise {
              "JM Press",
              "Deadlift", "Sumo Deadlift",
              "Romanian Deadlift",
+             "Trap Bar Deadlift",
              "Stiff Leg Deadlift",
              "Squat", "Front Squat",
              "Pause Squat", "Box Squat",
+             "Safety Bar Squat",
              "Sumo Squat",
              "Hip Thrust",
              "Landmine Rotation":            return "figure.strengthtraining.traditional"
@@ -195,7 +215,7 @@ final class Exercise {
             case .glutes:    return "figure.strengthtraining.functional"
             case .core:      return "figure.core.training"
             case .cardio:    return "heart.fill"
-            case .fullBody:  return "figure.mixed.cardio"
+            case .fullBody:  return "figure.cross.training"
             }
         }
     }

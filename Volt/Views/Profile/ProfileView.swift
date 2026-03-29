@@ -8,6 +8,7 @@ struct ProfileView: View {
     @Environment(SupabaseManager.self) private var supabase
     @AppStorage("username") private var username = "Athlete"
     @AppStorage("weightUnit") private var weightUnit = "kg"
+    @AppStorage("defaultRestDuration") private var defaultRestDuration = 90
     @State private var editingName = false
     @State private var tempName = ""
     @State private var showingSignOutConfirm = false
@@ -147,6 +148,20 @@ struct ProfileView: View {
             Picker("Weight Unit", selection: $weightUnit) {
                 Text("Kilograms (kg)").tag("kg")
                 Text("Pounds (lb)").tag("lb")
+            }
+            .foregroundStyle(VoltColor.label)
+            .listRowBackground(VoltColor.surface)
+            .listRowSeparatorTint(VoltColor.border)
+
+            Picker("Default Rest Timer", selection: $defaultRestDuration) {
+                Text("30 sec").tag(30)
+                Text("45 sec").tag(45)
+                Text("60 sec").tag(60)
+                Text("90 sec").tag(90)
+                Text("2 min").tag(120)
+                Text("2.5 min").tag(150)
+                Text("3 min").tag(180)
+                Text("5 min").tag(300)
             }
             .foregroundStyle(VoltColor.label)
             .listRowBackground(VoltColor.surface)

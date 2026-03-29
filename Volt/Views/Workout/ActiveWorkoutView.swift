@@ -111,20 +111,55 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Rest timer banner
     private var restBanner: some View {
-        HStack {
-            Image(systemName: "timer").font(.caption.weight(.semibold))
-            Text("Rest — \(vm.formattedRest)")
-                .font(.subheadline.weight(.semibold))
+        HStack(spacing: VoltSpacing.sm) {
+            Image(systemName: "timer")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(VoltColor.warning)
+
+            Text("Rest")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(VoltColor.warning)
+
+            Text(vm.formattedRest)
+                .font(VoltFont.mono(16, weight: .bold))
+                .foregroundStyle(VoltColor.warning)
+                .frame(minWidth: 44)
+
             Spacer()
+
+            // Adjust buttons
+            Button {
+                vm.adjustRestTimer(by: -15)
+            } label: {
+                Text("−15s")
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(VoltColor.surfaceHigh)
+                    .foregroundStyle(VoltColor.labelSecondary)
+                    .clipShape(Capsule())
+            }
+
+            Button {
+                vm.adjustRestTimer(by: 30)
+            } label: {
+                Text("+30s")
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(VoltColor.surfaceHigh)
+                    .foregroundStyle(VoltColor.accent)
+                    .clipShape(Capsule())
+            }
+
             Button("Skip") { vm.stopRestTimer() }
                 .font(.caption.weight(.bold))
                 .foregroundStyle(VoltColor.accent)
         }
-        .foregroundStyle(VoltColor.warning)
         .padding(.horizontal, VoltSpacing.md)
         .padding(.vertical, 10)
-        .background(VoltColor.warning.opacity(0.1))
-        .overlay(Divider().background(VoltColor.warning.opacity(0.3)), alignment: .bottom)
+        .background(VoltColor.warning.opacity(0.08))
+        .overlay(Divider().background(VoltColor.warning.opacity(0.25)), alignment: .bottom)
     }
 
     // MARK: - Exercise list

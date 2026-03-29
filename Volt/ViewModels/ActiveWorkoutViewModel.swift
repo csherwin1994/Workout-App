@@ -83,11 +83,16 @@ final class ActiveWorkoutViewModel {
         try? context.save()
     }
 
+    var defaultRestDuration: Int {
+        let stored = UserDefaults.standard.integer(forKey: "defaultRestDuration")
+        return stored > 0 ? stored : 90
+    }
+
     func toggleSetComplete(_ set: WorkoutSet, context: ModelContext) {
         set.isCompleted.toggle()
         if set.isCompleted {
             set.completedAt = Date()
-            startRestTimer(seconds: 90)
+            startRestTimer(seconds: defaultRestDuration)
         }
         try? context.save()
     }
@@ -129,6 +134,13 @@ final class ActiveWorkoutViewModel {
         restTimer?.invalidate()
         isRestTimerRunning = false
         restTimerSeconds = 0
+    }
+
+    func adjustRestTimer(by seconds: Int) {
+        restTimerSeconds = max(0, restTimerSeconds + seconds)
+        if restTimerSeconds == 0 {
+            stopRestTimer()
+        }
     }
 
     private func startWorkoutTimer() {

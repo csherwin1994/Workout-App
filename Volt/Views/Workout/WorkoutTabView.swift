@@ -7,6 +7,7 @@ struct WorkoutTabView: View {
     @State private var showingActiveWorkout = false
     @State private var showingRoutinePicker = false
     @State private var showingCreateRoutine = false
+    @State private var showingWorkoutBuilder = false
 
     @Query(sort: \Routine.createdAt, order: .reverse) private var routines: [Routine]
     @Query(sort: \WorkoutSession.startDate, order: .reverse) private var sessions: [WorkoutSession]
@@ -74,6 +75,9 @@ struct WorkoutTabView: View {
                 RoutinePickerSheet(workoutVM: workoutVM, showingActiveWorkout: $showingActiveWorkout)
             }
             .sheet(isPresented: $showingCreateRoutine) { CreateRoutineView() }
+            .sheet(isPresented: $showingWorkoutBuilder) {
+                WorkoutBuilderView(workoutVM: workoutVM, showingActiveWorkout: $showingActiveWorkout)
+            }
         }
         .environment(workoutVM)
     }
@@ -148,12 +152,12 @@ struct WorkoutTabView: View {
             }
 
             HStack(spacing: 10) {
-                // Recommendation
-                Button { showingRoutinePicker = true } label: {
+                // Build a Workout
+                Button { showingWorkoutBuilder = true } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: "wand.and.stars")
                             .font(.system(size: 14, weight: .semibold))
-                        Text(recommendation.buttonLabel)
+                        Text("Build Workout")
                             .font(.system(size: 14, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
