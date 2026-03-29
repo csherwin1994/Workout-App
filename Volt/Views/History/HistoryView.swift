@@ -100,6 +100,9 @@ struct WorkoutHistoryRow: View {
                         : String(format: "%.0f \(weightUnit)", session.totalVolume),
                     label: "vol", icon: "scalemass"
                 )
+                if session.totalCardioMinutes > 0 {
+                    historyPill(String(format: "%.0f min", session.totalCardioMinutes), label: "cardio", icon: "heart.fill")
+                }
                 historyPill("\(session.exerciseLogs.count)", label: "exercises", icon: "list.bullet")
             }
 
@@ -149,6 +152,34 @@ struct WorkoutDetailView: View {
                             color: VoltColor.accentGreen
                         )
                     }
+                    if session.totalCardioMinutes > 0 {
+                        HStack(spacing: 0) {
+                            SummaryCell(
+                                value: String(format: "%.0f", session.totalCardioMinutes),
+                                label: "Cardio min",
+                                icon: "heart.fill",
+                                color: VoltColor.muscle(.cardio)
+                            )
+                            if session.totalCardioDistance > 0 {
+                                Divider().frame(height: 40)
+                                SummaryCell(
+                                    value: String(format: "%.2f", session.totalCardioDistance),
+                                    label: "Distance",
+                                    icon: "point.bottomleft.forward.to.point.topright.scurvepath.fill",
+                                    color: VoltColor.muscle(.cardio)
+                                )
+                            }
+                            if session.totalCardioCalories > 0 {
+                                Divider().frame(height: 40)
+                                SummaryCell(
+                                    value: "\(session.totalCardioCalories)",
+                                    label: "Calories",
+                                    icon: "flame.fill",
+                                    color: VoltColor.warning
+                                )
+                            }
+                        }
+                    }
                 }
                 .listRowBackground(VoltColor.surface)
                 .listRowSeparatorTint(VoltColor.border)
@@ -156,20 +187,48 @@ struct WorkoutDetailView: View {
                 // Exercises
                 ForEach(sortedLogs) { log in
                     Section {
-                        ForEach(Array(log.completedSets.enumerated()), id: \.element.id) { idx, set in
-                            HStack {
-                                Text("Set \(idx + 1)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(VoltColor.labelSecondary)
-                                Spacer()
-                                Text(set.weight > 0
-                                     ? String(format: "%.1f \(weightUnit) × %d", set.weight, set.reps)
-                                     : "\(set.reps) reps")
+                        if log.isCardio {
+                            ForEach(Array(log.completedSets.enumerated()), id: \.element.id) { idx, set in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Label(String(format: "%.0f min", set.duration), systemImage: "clock.fill")
+                                        Spacer()
+                                        if set.distance > 0 {
+                                            Label(String(format: "%.2f km", set.distance), systemImage: "point.bottomleft.forward.to.point.topright.scurvepath.fill")
+                                        }
+                                        if set.calories > 0 {
+                                            Label("\(set.calories) cal", systemImage: "flame.fill")
+                                                .foregroundStyle(VoltColor.warning)
+                                        }
+                                    }
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(VoltColor.label)
+                                    if set.duration > 0 && set.distance > 0 {
+                                        let pace = set.duration / set.distance
+                                        Text(String(format: "Pace: %.1f min/km", pace))
+                                            .font(.caption)
+                                            .foregroundStyle(VoltColor.labelSecondary)
+                                    }
+                                }
+                                .listRowBackground(VoltColor.surface)
+                                .listRowSeparatorTint(VoltColor.border)
                             }
-                            .listRowBackground(VoltColor.surface)
-                            .listRowSeparatorTint(VoltColor.border)
+                        } else {
+                            ForEach(Array(log.completedSets.enumerated()), id: \.element.id) { idx, set in
+                                HStack {
+                                    Text("Set \(idx + 1)")
+                                        .font(.subheadline)
+                                        .foregroundStyle(VoltColor.labelSecondary)
+                                    Spacer()
+                                    Text(set.weight > 0
+                                         ? String(format: "%.1f \(weightUnit) × %d", set.weight, set.reps)
+                                         : "\(set.reps) reps")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(VoltColor.label)
+                                }
+                                .listRowBackground(VoltColor.surface)
+                                .listRowSeparatorTint(VoltColor.border)
+                            }
                         }
                         if log.completedSets.isEmpty {
                             Text("No completed sets")

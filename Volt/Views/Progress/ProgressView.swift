@@ -9,6 +9,10 @@ struct ProgressView: View {
 
     private var completed: [WorkoutSession] { sessions.filter { $0.endDate != nil } }
 
+    private var hasCardioData: Bool {
+        completed.contains { $0.totalCardioMinutes > 0 }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -17,6 +21,11 @@ struct ProgressView: View {
                     VStack(spacing: VoltSpacing.xl) {
                         WeeklyVolumeChart(sessions: completed)
                             .voltSection("Weekly Volume")
+
+                        if hasCardioData {
+                            WeeklyCardioChart(sessions: completed)
+                                .voltSection("Weekly Cardio")
+                        }
 
                         FrequencyHeatmap(sessions: completed)
                             .voltSection("Last 30 Days")
@@ -27,6 +36,12 @@ struct ProgressView: View {
                             selectedExercise: $selectedExercise
                         )
                         .voltSection("Exercise Progress")
+
+                        CardioProgressChart(
+                            sessions: completed,
+                            exercises: exercises
+                        )
+                        .voltSection("Cardio Progress")
                     }
                     .padding(.top, VoltSpacing.md)
                     .padding(.bottom, VoltSpacing.xxl)
@@ -228,6 +243,214 @@ struct ExerciseProgressChart: View {
                                 .lineStyle(StrokeStyle(lineWidth: 2))
                             PointMark(x: .value("Date", pt.date), y: .value("kg", pt.maxWeight))
                                 .foregroundStyle(VoltColor.accent)
+                                .symbolSize(25)
+                        }
+                        .chartYAxis {
+                            AxisMarks(position: .leading) {
+                                AxisGridLine().foregroundStyle(VoltColor.border)
+                                AxisValueLabel()
+                                    .foregroundStyle(VoltColor.labelTertiary)
+                                    .font(.system(size: 10))
+                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks(values: .stride(by: .day, count: max(1, points.count / 4))) {
+                                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                                    .foregroundStyle(VoltColor.labelTertiary)
+                                    .font(.system(size: 10))
+                            }
+                        }
+                        .frame(height: 160)
+                    }
+                }
+                .padding(VoltSpacing.md)
+                .background(VoltColor.surface)
+                .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+                .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius).stroke(VoltColor.border, lineWidth: 0.5))
+                .padding(.horizontal, VoltSpacing.md)
+            }
+        }
+    }
+}
+
+// MARK: - Weekly cardio chart
+struct WeeklyCardioChart: View {
+    let sessions: [WorkoutSession]
+
+    private struct Week: Identifiable {
+        let id = UUID()
+        let label: String
+        let minutes: Double
+        let distance: Double
+    }
+
+    private var data: [Week] {
+        let cal = Calendar.current
+        return (0..<8).reversed().compactMap { ago -> Week? in
+            guard let start = cal.date(byAdding: .weekOfYear, value: -ago, to: Date()),
+                  let interval = cal.dateInterval(of: .weekOfYear, for: start)
+            else { return nil }
+            let weekSessions = sessions.filter { interval.contains($0.startDate) }
+            let mins = weekSessions.reduce(0.0) { $0 + $1.totalCardioMinutes }
+            let dist = weekSessions.reduce(0.0) { $0 + $1.totalCardioDistance }
+            let fmt = DateFormatter(); fmt.dateFormat = ago == 0 ? "'Now'" : "M/d"
+            return Week(label: fmt.string(from: interval.start), minutes: mins, distance: dist)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if data.allSatisfy({ $0.minutes == 0 }) {
+                emptyChart(message: "Log cardio sessions to see weekly trends")
+            } else {
+                Chart(data) { week in
+                    BarMark(x: .value("Week", week.label), y: .value("Minutes", week.minutes))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(hex: "FF4757"), Color(hex: "FF6B81")],
+                                startPoint: .bottom, endPoint: .top
+                            )
+                        )
+                        .cornerRadius(4)
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading) {
+                        AxisGridLine().foregroundStyle(VoltColor.border)
+                        AxisValueLabel()
+                            .foregroundStyle(VoltColor.labelTertiary)
+                            .font(.system(size: 10))
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks { AxisValueLabel().foregroundStyle(VoltColor.labelTertiary).font(.system(size: 10)) }
+                }
+                .frame(height: 160)
+                .padding(VoltSpacing.md)
+
+                // Summary row
+                let totalMins = data.reduce(0) { $0 + $1.minutes }
+                let totalDist = data.reduce(0) { $0 + $1.distance }
+                HStack {
+                    Label(String(format: "%.0f min total", totalMins), systemImage: "clock.fill")
+                    Spacer()
+                    if totalDist > 0 {
+                        Label(String(format: "%.1f km total", totalDist), systemImage: "point.bottomleft.forward.to.point.topright.scurvepath.fill")
+                    }
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(VoltColor.labelSecondary)
+                .padding(.horizontal, VoltSpacing.md)
+                .padding(.bottom, VoltSpacing.sm)
+            }
+        }
+        .background(VoltColor.surface)
+        .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+        .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius).stroke(VoltColor.border, lineWidth: 0.5))
+        .padding(.horizontal, VoltSpacing.md)
+    }
+}
+
+// MARK: - Cardio exercise progress
+struct CardioProgressChart: View {
+    let sessions: [WorkoutSession]
+    let exercises: [Exercise]
+    @State private var selectedExercise: String?
+
+    private struct Point: Identifiable {
+        let id = UUID()
+        let date: Date
+        let duration: Double
+        let distance: Double
+    }
+
+    private var cardioExerciseNames: [String] {
+        let used = Set(
+            sessions.flatMap { $0.exerciseLogs }
+                .filter(\.isCardio)
+                .map(\.exerciseName)
+        )
+        return exercises
+            .filter { $0.muscleGroup == .cardio && used.contains($0.name) }
+            .map(\.name).sorted()
+    }
+
+    private var activeName: String { selectedExercise ?? cardioExerciseNames.first ?? "" }
+
+    private var points: [Point] {
+        sessions.compactMap { s in
+            guard let log = s.exerciseLogs.first(where: { $0.exerciseName == activeName && $0.isCardio }),
+                  !log.completedSets.isEmpty
+            else { return nil }
+            let dur = log.completedSets.reduce(0.0) { $0 + $1.duration }
+            let dist = log.completedSets.reduce(0.0) { $0 + $1.distance }
+            guard dur > 0 else { return nil }
+            return Point(date: s.startDate, duration: dur, distance: dist)
+        }
+        .sorted { $0.date < $1.date }
+    }
+
+    private var bestDuration: Double { points.map(\.duration).max() ?? 0 }
+    private var bestDistance: Double { points.map(\.distance).max() ?? 0 }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: VoltSpacing.md) {
+            if cardioExerciseNames.isEmpty {
+                emptyChart(message: "Log cardio workouts to track your endurance progress")
+                    .padding(.horizontal, VoltSpacing.md)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(cardioExerciseNames, id: \.self) { name in
+                            FilterChip(label: name, isSelected: activeName == name) {
+                                selectedExercise = name
+                            }
+                        }
+                    }
+                    .padding(.horizontal, VoltSpacing.md)
+                }
+
+                VStack(alignment: .leading, spacing: VoltSpacing.md) {
+                    if bestDuration > 0 {
+                        HStack(spacing: 6) {
+                            Image(systemName: "heart.fill").foregroundStyle(VoltColor.muscle(.cardio))
+                            Text("Best: \(String(format: "%.0f min", bestDuration))")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(VoltColor.label)
+                            if bestDistance > 0 {
+                                Text("·")
+                                    .foregroundStyle(VoltColor.labelTertiary)
+                                Text(String(format: "%.2f km", bestDistance))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(VoltColor.labelSecondary)
+                            }
+                            Spacer()
+                            Text("\(points.count) sessions")
+                                .font(.caption)
+                                .foregroundStyle(VoltColor.labelSecondary)
+                        }
+                    }
+
+                    if points.count < 2 {
+                        Text("Log at least 2 sessions with this exercise to see a trend")
+                            .font(.caption)
+                            .foregroundStyle(VoltColor.labelTertiary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, VoltSpacing.lg)
+                    } else {
+                        Chart(points) { pt in
+                            AreaMark(x: .value("Date", pt.date), y: .value("min", pt.duration))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [VoltColor.muscle(.cardio).opacity(0.25), VoltColor.muscle(.cardio).opacity(0.05)],
+                                        startPoint: .top, endPoint: .bottom
+                                    )
+                                )
+                            LineMark(x: .value("Date", pt.date), y: .value("min", pt.duration))
+                                .foregroundStyle(VoltColor.muscle(.cardio))
+                                .lineStyle(StrokeStyle(lineWidth: 2))
+                            PointMark(x: .value("Date", pt.date), y: .value("min", pt.duration))
+                                .foregroundStyle(VoltColor.muscle(.cardio))
                                 .symbolSize(25)
                         }
                         .chartYAxis {

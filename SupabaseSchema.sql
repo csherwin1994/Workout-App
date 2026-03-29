@@ -66,7 +66,10 @@ create table if not exists public.workout_sets (
   order_index  int     not null default 0,
   weight       numeric not null default 0,
   reps         int     not null default 0,
-  is_completed boolean not null default false
+  is_completed boolean not null default false,
+  duration     numeric not null default 0,   -- cardio: minutes
+  distance     numeric not null default 0,   -- cardio: km or miles
+  calories     int     not null default 0    -- cardio: kcal
 );
 
 create index if not exists workout_sets_log_id on public.workout_sets(log_id);
@@ -148,3 +151,11 @@ create policy "Users manage own routine exercises" on public.routine_exercises
       where r.id = routine_exercises.routine_id and r.user_id = auth.uid()
     )
   );
+
+-- ─────────────────────────────────────────────
+-- Migration: Add cardio columns to workout_sets
+-- Run this if upgrading an existing database
+-- ─────────────────────────────────────────────
+-- alter table public.workout_sets add column if not exists duration  numeric not null default 0;
+-- alter table public.workout_sets add column if not exists distance  numeric not null default 0;
+-- alter table public.workout_sets add column if not exists calories  int     not null default 0;

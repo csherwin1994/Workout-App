@@ -53,12 +53,15 @@ struct RemoteWorkoutSet: Codable {
     var weight: Double
     var reps: Int
     var isCompleted: Bool
+    var duration: Double
+    var distance: Double
+    var calories: Int
 
     enum CodingKeys: String, CodingKey {
         case id
         case logId = "log_id"
         case orderIndex = "order_index"
-        case weight, reps
+        case weight, reps, duration, distance, calories
         case isCompleted = "is_completed"
     }
 }
@@ -304,7 +307,9 @@ final class SupabaseManager {
                     let remoteSet = RemoteWorkoutSet(
                         id: set.id.uuidString, logId: log.id.uuidString,
                         orderIndex: set.orderIndex, weight: set.weight,
-                        reps: set.reps, isCompleted: set.isCompleted
+                        reps: set.reps, isCompleted: set.isCompleted,
+                        duration: set.duration, distance: set.distance,
+                        calories: set.calories
                     )
                     try await upsert(table: "workout_sets", record: remoteSet)
                 }

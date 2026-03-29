@@ -35,6 +35,24 @@ final class WorkoutSession {
         exerciseLogs.flatMap(\.sets).filter(\.isCompleted).count
     }
 
+    var totalCardioMinutes: Double {
+        exerciseLogs.filter(\.isCardio)
+            .flatMap(\.sets).filter(\.isCompleted)
+            .reduce(0) { $0 + $1.duration }
+    }
+
+    var totalCardioDistance: Double {
+        exerciseLogs.filter(\.isCardio)
+            .flatMap(\.sets).filter(\.isCompleted)
+            .reduce(0) { $0 + $1.distance }
+    }
+
+    var totalCardioCalories: Int {
+        exerciseLogs.filter(\.isCardio)
+            .flatMap(\.sets).filter(\.isCompleted)
+            .reduce(0) { $0 + $1.calories }
+    }
+
     init(title: String = "My Workout") {
         self.id = UUID()
         self.title = title
@@ -51,6 +69,10 @@ final class ExerciseLog {
     var exerciseMuscleGroup: String
     var orderIndex: Int
     @Relationship(deleteRule: .cascade) var sets: [WorkoutSet]
+
+    var isCardio: Bool {
+        exerciseMuscleGroup == Exercise.MuscleGroup.cardio.rawValue
+    }
 
     var completedSets: [WorkoutSet] {
         sets.filter(\.isCompleted).sorted { $0.orderIndex < $1.orderIndex }
@@ -76,6 +98,11 @@ final class WorkoutSet {
     var isCompleted: Bool
     var completedAt: Date?
 
+    // Cardio fields
+    var duration: Double   // minutes
+    var distance: Double   // km or miles (follows user's unit preference)
+    var calories: Int
+
     init(orderIndex: Int = 0, weight: Double = 0, reps: Int = 0, setType: SetType = .normal) {
         self.id = UUID()
         self.orderIndex = orderIndex
@@ -83,6 +110,9 @@ final class WorkoutSet {
         self.reps = reps
         self.setType = setType
         self.isCompleted = false
+        self.duration = 0
+        self.distance = 0
+        self.calories = 0
     }
 
     enum SetType: String, CaseIterable, Codable {

@@ -82,12 +82,16 @@ struct ActiveWorkoutView: View {
             // Volume strip
             let totalVol = vm.session?.totalVolume ?? 0
             let totalSets = vm.session?.totalSets ?? 0
+            let cardioMins = vm.session?.totalCardioMinutes ?? 0
             HStack(spacing: VoltSpacing.xl) {
                 volumePill(value: "\(totalSets)", label: "sets")
                 volumePill(value: totalVol >= 1000
                     ? String(format: "%.1fk", totalVol/1000)
                     : String(format: "%.0f \(weightUnit)", totalVol),
                     label: "volume")
+                if cardioMins > 0 {
+                    volumePill(value: String(format: "%.0f", cardioMins), label: "cardio min")
+                }
                 volumePill(value: "\(sortedLogs.count)", label: "exercises")
             }
             .frame(maxWidth: .infinity)
@@ -177,6 +181,8 @@ struct ExerciseLogCard: View {
         log.sets.sorted { $0.orderIndex < $1.orderIndex }
     }
 
+    private var isCardio: Bool { log.isCardio }
+
     var body: some View {
         VStack(spacing: 0) {
             // Exercise header
@@ -184,7 +190,7 @@ struct ExerciseLogCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(log.exerciseName)
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(VoltColor.accent)
+                        .foregroundStyle(isCardio ? VoltColor.muscle(.cardio) : VoltColor.accent)
                     if let group = Exercise.MuscleGroup(rawValue: log.exerciseMuscleGroup) {
                         MuscleBadge(group: group)
                     }
@@ -196,6 +202,29 @@ struct ExerciseLogCard: View {
 
             Divider().background(VoltColor.border)
 
+            if isCardio {
+                cardioContent
+            } else {
+                strengthContent
+            }
+        }
+        .background(VoltColor.surface)
+        .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
+        .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
+            .stroke(isCardio ? VoltColor.muscle(.cardio).opacity(0.3) : VoltColor.border, lineWidth: 0.5))
+        .confirmationDialog("Remove \(log.exerciseName)?", isPresented: $showingRemove, titleVisibility: .visible) {
+            Button("Remove Exercise", role: .destructive) {
+                vm.session?.exerciseLogs.removeAll { $0.id == log.id }
+                modelContext.delete(log)
+                try? modelContext.save()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    // MARK: - Strength content (original layout)
+    private var strengthContent: some View {
+        VStack(spacing: 0) {
             // Column headers
             HStack {
                 Text("SET").frame(width: 34, alignment: .center)
@@ -236,18 +265,102 @@ struct ExerciseLogCard: View {
                 .padding(.vertical, 12)
             }
         }
-        .background(VoltColor.surface)
-        .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radius))
-        .overlay(RoundedRectangle(cornerRadius: VoltSpacing.radius)
-            .stroke(VoltColor.border, lineWidth: 0.5))
-        .confirmationDialog("Remove \(log.exerciseName)?", isPresented: $showingRemove, titleVisibility: .visible) {
-            Button("Remove Exercise", role: .destructive) {
-                vm.session?.exerciseLogs.removeAll { $0.id == log.id }
-                modelContext.delete(log)
-                try? modelContext.save()
+    }
+
+    // MARK: - Cardio content
+    private var cardioContent: some View {
+        VStack(spacing: 0) {
+            // Column headers
+            HStack {
+                Text("MIN").frame(maxWidth: .infinity, alignment: .center)
+                Text("DIST").frame(maxWidth: .infinity, alignment: .center)
+                Text("CAL").frame(maxWidth: .infinity, alignment: .center)
+                Image(systemName: "checkmark").frame(width: 36, alignment: .center)
             }
-            Button("Cancel", role: .cancel) {}
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(VoltColor.labelTertiary)
+            .padding(.horizontal, VoltSpacing.md)
+            .padding(.vertical, 8)
+
+            Divider().background(VoltColor.borderSubtle)
+
+            // Cardio sessions
+            VStack(spacing: 0) {
+                ForEach(Array(sortedSets.enumerated()), id: \.element.id) { index, set in
+                    CardioSetRow(set: set, vm: vm)
+                    if index < sortedSets.count - 1 {
+                        Divider().background(VoltColor.borderSubtle).padding(.leading, VoltSpacing.md)
+                    }
+                }
+            }
+
+            // Add session
+            Button { vm.addSet(to: log, context: modelContext) } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus").font(.caption.weight(.bold))
+                    Text("Add Session").font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(VoltColor.labelSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            }
         }
+    }
+}
+
+// MARK: - Cardio set row
+struct CardioSetRow: View {
+    @Bindable var set: WorkoutSet
+    let vm: ActiveWorkoutViewModel
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Duration (minutes)
+            TextField("0", value: $set.duration, format: .number)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.center)
+                .font(VoltFont.mono(16))
+                .foregroundStyle(VoltColor.label)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(VoltColor.surfaceHigh)
+                .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radiusXs))
+
+            // Distance
+            TextField("0", value: $set.distance, format: .number)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.center)
+                .font(VoltFont.mono(16))
+                .foregroundStyle(VoltColor.label)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(VoltColor.surfaceHigh)
+                .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radiusXs))
+
+            // Calories
+            TextField("0", value: $set.calories, format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(VoltFont.mono(16))
+                .foregroundStyle(VoltColor.label)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(VoltColor.surfaceHigh)
+                .clipShape(RoundedRectangle(cornerRadius: VoltSpacing.radiusXs))
+
+            // Complete toggle
+            Button { vm.toggleSetComplete(set, context: modelContext, isCardio: true) } label: {
+                Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(set.isCompleted ? VoltColor.success : VoltColor.border)
+                    .frame(width: 36)
+            }
+        }
+        .padding(.horizontal, VoltSpacing.md)
+        .padding(.vertical, 10)
+        .background(set.isCompleted ? VoltColor.success.opacity(0.06) : Color.clear)
+        .animation(.easeInOut(duration: 0.2), value: set.isCompleted)
     }
 }
 

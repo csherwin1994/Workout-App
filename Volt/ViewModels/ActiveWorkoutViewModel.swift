@@ -65,6 +65,10 @@ final class ActiveWorkoutViewModel {
         try? context.save()
     }
 
+    func isCardioLog(_ log: ExerciseLog) -> Bool {
+        log.exerciseMuscleGroup == Exercise.MuscleGroup.cardio.rawValue
+    }
+
     func addSet(to log: ExerciseLog, context: ModelContext) {
         let lastSet = log.sets.sorted { $0.orderIndex < $1.orderIndex }.last
         let newSet = WorkoutSet(
@@ -83,11 +87,13 @@ final class ActiveWorkoutViewModel {
         try? context.save()
     }
 
-    func toggleSetComplete(_ set: WorkoutSet, context: ModelContext) {
+    func toggleSetComplete(_ set: WorkoutSet, context: ModelContext, isCardio: Bool = false) {
         set.isCompleted.toggle()
         if set.isCompleted {
             set.completedAt = Date()
-            startRestTimer(seconds: 90)
+            if !isCardio {
+                startRestTimer(seconds: 90)
+            }
         }
         try? context.save()
     }
