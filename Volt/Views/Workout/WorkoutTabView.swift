@@ -66,7 +66,7 @@ struct WorkoutTabView: View {
                     }
                 }
             }
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
             .fullScreenCover(isPresented: $showingActiveWorkout) {
                 ActiveWorkoutView(vm: workoutVM)
             }

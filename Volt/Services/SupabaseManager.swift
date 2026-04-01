@@ -77,6 +77,28 @@ struct RemoteRoutine: Codable {
     }
 }
 
+struct RemoteRoutineExercise: Codable {
+    var id: String
+    var routineId: String
+    var exerciseName: String
+    var exerciseMuscleGroup: String
+    var orderIndex: Int
+    var targetSets: Int
+    var targetReps: Int
+    var targetWeight: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case routineId = "routine_id"
+        case exerciseName = "exercise_name"
+        case exerciseMuscleGroup = "exercise_muscle_group"
+        case orderIndex = "order_index"
+        case targetSets = "target_sets"
+        case targetReps = "target_reps"
+        case targetWeight = "target_weight"
+    }
+}
+
 // MARK: - Auth State
 
 enum AuthState {
@@ -274,6 +296,8 @@ final class SupabaseManager {
         lastSyncError = nil
         defer { isSyncing = false }
         do {
+            try await pullWorkouts(context: context, userId: userId)
+            try await pullRoutines(context: context, userId: userId)
             try await pushWorkouts(context: context, userId: userId)
             try await pushRoutines(context: context, userId: userId)
         } catch {
@@ -322,10 +346,169 @@ final class SupabaseManager {
                 name: routine.name, notes: routine.notes, updatedAt: Date()
             )
             try await upsert(table: "routines", record: remote)
+            for exercise in routine.exercises {
+                let remoteEx = RemoteRoutineExercise(
+                    id: exercise.id.uuidString,
+                    routineId: routine.id.uuidString,
+                    exerciseName: exercise.exerciseName,
+                    exerciseMuscleGroup: exercise.exerciseMuscleGroup,
+                    orderIndex: exercise.orderIndex,
+                    targetSets: exercise.targetSets,
+                    targetReps: exercise.targetReps,
+                    targetWeight: exercise.targetWeight
+                )
+                try await upsert(table: "routine_exercises", record: remoteEx)
+            }
         }
     }
 
+    // MARK: - Pull Workouts
+
+    private func pullWorkouts(context: ModelContext, userId: String) async throws {
+        let decoder = makeDecoder()
+        let localSessions = try context.fetch(FetchDescriptor<WorkoutSession>())
+        let localSessionIds = Set(localSessions.map { $0.id.uuidString })
+
+        let remoteSessions = try await get(
+            path: "/rest/v1/workout_sessions",
+            queryItems: [URLQueryItem(name: "user_id", value: "eq.\(userId)")]
+        )
+        for sessionDict in remoteSessions {
+            let data = try JSONSerialization.data(withJSONObject: sessionDict)
+            let remote = try decoder.decode(RemoteWorkoutSession.self, from: data)
+            guard !localSessionIds.contains(remote.id), let uuid = UUID(uuidString: remote.id) else { continue }
+
+            let session = WorkoutSession(title: remote.title)
+            session.id = uuid
+            session.startDate = remote.startDate
+            session.endDate = remote.endDate
+            session.notes = remote.notes
+            context.insert(session)
+
+            let remoteLogs = try await get(
+                path: "/rest/v1/exercise_logs",
+                queryItems: [URLQueryItem(name: "session_id", value: "eq.\(remote.id)")]
+            )
+            for logDict in remoteLogs {
+                let logData = try JSONSerialization.data(withJSONObject: logDict)
+                let remoteLog = try decoder.decode(RemoteExerciseLog.self, from: logData)
+                guard let logId = UUID(uuidString: remoteLog.id) else { continue }
+
+                let log = ExerciseLog(
+                    exerciseName: remoteLog.exerciseName,
+                    exerciseMuscleGroup: remoteLog.exerciseMuscleGroup,
+                    orderIndex: remoteLog.orderIndex
+                )
+                log.id = logId
+                context.insert(log)
+                session.exerciseLogs.append(log)
+
+                let remoteSets = try await get(
+                    path: "/rest/v1/workout_sets",
+                    queryItems: [URLQueryItem(name: "log_id", value: "eq.\(remoteLog.id)")]
+                )
+                for setDict in remoteSets {
+                    let setData = try JSONSerialization.data(withJSONObject: setDict)
+                    let remoteSet = try decoder.decode(RemoteWorkoutSet.self, from: setData)
+                    guard let setId = UUID(uuidString: remoteSet.id) else { continue }
+
+                    let workoutSet = WorkoutSet(
+                        orderIndex: remoteSet.orderIndex,
+                        weight: remoteSet.weight,
+                        reps: remoteSet.reps
+                    )
+                    workoutSet.id = setId
+                    workoutSet.isCompleted = remoteSet.isCompleted
+                    context.insert(workoutSet)
+                    log.sets.append(workoutSet)
+                }
+            }
+        }
+        try context.save()
+    }
+
+    // MARK: - Pull Routines
+
+    private func pullRoutines(context: ModelContext, userId: String) async throws {
+        let decoder = makeDecoder()
+        let localRoutines = try context.fetch(FetchDescriptor<Routine>())
+        let localRoutineIds = Set(localRoutines.map { $0.id.uuidString })
+
+        let remoteRoutines = try await get(
+            path: "/rest/v1/routines",
+            queryItems: [URLQueryItem(name: "user_id", value: "eq.\(userId)")]
+        )
+        for routineDict in remoteRoutines {
+            let data = try JSONSerialization.data(withJSONObject: routineDict)
+            let remote = try decoder.decode(RemoteRoutine.self, from: data)
+            guard !localRoutineIds.contains(remote.id), let uuid = UUID(uuidString: remote.id) else { continue }
+
+            let routine = Routine(name: remote.name, notes: remote.notes)
+            routine.id = uuid
+            context.insert(routine)
+
+            let remoteExercises = try await get(
+                path: "/rest/v1/routine_exercises",
+                queryItems: [URLQueryItem(name: "routine_id", value: "eq.\(remote.id)")]
+            )
+            for exDict in remoteExercises {
+                let exData = try JSONSerialization.data(withJSONObject: exDict)
+                let remoteEx = try decoder.decode(RemoteRoutineExercise.self, from: exData)
+                guard let exId = UUID(uuidString: remoteEx.id) else { continue }
+
+                let exercise = RoutineExercise(
+                    exerciseName: remoteEx.exerciseName,
+                    exerciseMuscleGroup: remoteEx.exerciseMuscleGroup,
+                    orderIndex: remoteEx.orderIndex,
+                    targetSets: remoteEx.targetSets,
+                    targetReps: remoteEx.targetReps,
+                    targetWeight: remoteEx.targetWeight
+                )
+                exercise.id = exId
+                context.insert(exercise)
+                routine.exercises.append(exercise)
+            }
+        }
+        try context.save()
+    }
+
     // MARK: - HTTP Helpers
+
+    private func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        let withFractional = ISO8601DateFormatter()
+        withFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let withoutFractional = ISO8601DateFormatter()
+        withoutFractional.formatOptions = [.withInternetDateTime]
+        decoder.dateDecodingStrategy = .custom { dec in
+            let container = try dec.singleValueContainer()
+            let str = try container.decode(String.self)
+            if let date = withFractional.date(from: str) { return date }
+            if let date = withoutFractional.date(from: str) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date: \(str)")
+        }
+        return decoder
+    }
+
+    private func get(path: String, queryItems: [URLQueryItem] = []) async throws -> [[String: Any]] {
+        var components = URLComponents(string: baseURL.absoluteString + path)!
+        if !queryItems.isEmpty { components.queryItems = queryItems }
+        guard let url = components.url else { throw SupabaseError.encodingFailed }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw SupabaseError.httpError(http.statusCode, msg)
+        }
+        if data.isEmpty { return [] }
+        return (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+    }
 
     private func upsert<T: Encodable>(table: String, record: T) async throws {
         let encoder = JSONEncoder()

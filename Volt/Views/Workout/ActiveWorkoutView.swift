@@ -25,7 +25,7 @@ struct ActiveWorkoutView: View {
                     exerciseList
                 }
             }
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .sheet(isPresented: $showingExercisePicker) {
             ExercisePickerSheet { vm.addExercise($0, context: modelContext) }
