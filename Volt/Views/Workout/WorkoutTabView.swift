@@ -25,7 +25,8 @@ struct WorkoutTabView: View {
         let completed = sessions.filter { $0.endDate != nil }
         while completed.contains(where: { Calendar.current.isDate($0.startDate, inSameDayAs: day) }) {
             count += 1
-            day = Calendar.current.date(byAdding: .day, value: -1, to: day)!
+            guard let previous = Calendar.current.date(byAdding: .day, value: -1, to: day) else { break }
+            day = previous
         }
         return count
     }
@@ -399,6 +400,7 @@ struct RoutinePickerSheet: View {
                 } else {
                     List(routines) { routine in
                         Button {
+                            guard !workoutVM.isActive else { dismiss(); showingActiveWorkout = true; return }
                             workoutVM.startFromRoutine(routine, context: modelContext)
                             dismiss()
                             showingActiveWorkout = true
