@@ -143,6 +143,18 @@ struct ExerciseDetailView: View {
                 .listRowBackground(VoltColor.surface)
                 .listRowSeparatorTint(VoltColor.border)
 
+                Section {
+                    ExerciseDemoView(exercise: exercise)
+                        .listRowBackground(VoltColor.bg)
+                        .listRowInsets(EdgeInsets(
+                            top: VoltSpacing.sm,
+                            leading: VoltSpacing.md,
+                            bottom: VoltSpacing.sm,
+                            trailing: VoltSpacing.md
+                        ))
+                }
+                .listRowBackground(VoltColor.bg)
+
                 if !exercise.instructions.isEmpty {
                     Section("Instructions") {
                         Text(exercise.instructions)
