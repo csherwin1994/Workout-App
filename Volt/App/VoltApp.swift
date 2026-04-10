@@ -23,6 +23,7 @@ struct VoltApp: App {
 
 struct RootView: View {
     @Environment(SupabaseManager.self) private var supabase
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
     var body: some View {
         switch supabase.authState {
@@ -34,8 +35,13 @@ struct RootView: View {
                 .transition(.opacity)
 
         case .signedIn:
-            ContentView()
-                .transition(.opacity)
+            if hasSeenWelcome {
+                ContentView()
+                    .transition(.opacity)
+            } else {
+                WelcomeView(hasSeenWelcome: $hasSeenWelcome)
+                    .transition(.opacity)
+            }
         }
     }
 
